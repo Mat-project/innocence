@@ -1,0 +1,31 @@
+# Django & REST Framework
+django>=4.2
+djangorestframework>=3.14.0
+djangorestframework-simplejwt>=5.3.0  # JWT Authentication
+django-cors-headers>=4.3.1  # Enable frontend communication
+
+# Database
+psycopg2-binary>=2.9.9  # PostgreSQL connector
+django-environ>=0.11.2  # Environment variable management
+
+# File & Media Handling
+Pillow>=10.0.1  # Image processing
+django-storages>=1.14.2  # File storage (AWS S3, Firebase, etc.)
+
+# WebSockets & Real-time Features (For Phase 2)
+channels>=4.0.0  # Django Channels for WebSockets
+daphne>=4.0.0  # ASGI server for real-time features
+
+# Task Scheduling (Optional for Background Tasks)
+celery>=5.3.1  # Background task processing
+redis>=5.0.1  # Redis support for Celery
+
+# Caching & Optimization
+django-redis>=5.3.0  # Caching with Redis
+gunicorn>=21.2.0  # WSGI server for production
+
+# Security & Authentication
+bcrypt>=4.0.1  # Secure password hashing
+drf-yasg>=1.21.7  # API documentation (Swagger)
+dj-rest-auth>=5.0.0  # Authentication management
+django-allauth>=0.44.0  # User authentication
