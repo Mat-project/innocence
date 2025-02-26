@@ -35,7 +35,7 @@ const QuickAction = ({ title, description, icon, color = "blue", onClick }) => (
     className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 transition-all duration-200 w-full text-left group hover:shadow-lg transform hover:-translate-y-1"
   >
     <div className="flex items-start space-x-4">
-      <div className={`w-12 h-12 rounded-lg bg-${color}-100 dark:bg-${color}-900/20 flex items-center justify-center group-hover:bg-${color}-200 dark:group-hover:bg-${color}-900/40 transition-colors transform transition-transform group-hover:rotate-12`}>
+      <div className={`w-12 h-12 rounded-lg bg-${color}-100 dark:bg-${color}-900/20 flex items-center justify-center group-hover:bg-${color}-200 dark:group-hover:bg-${color}-900/40 transition-colors transform group-hover:rotate-12`}>
         <svg className={`w-6 h-6 text-${color}-600 dark:text-${color}-400`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={icon} />
         </svg>

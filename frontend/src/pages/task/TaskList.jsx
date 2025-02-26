@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Search, Filter, Calendar, Clock, Tag, 
-  AlertCircle, CheckCircle, Circle, 
-  ArrowUpCircle, Trash2, Edit, MessageCircle 
+  Search, AlertCircle, Circle, ArrowUpCircle, Trash2, Edit, Tag, Calendar 
 } from 'lucide-react';
 import { taskAPI } from '../../service/api';
 
-export default function TaskList({ refreshFlag }) {
+export default function TaskList({ refreshFlag, onEdit }) {
   const [tasks, setTasks] = useState([]);
   const [filteredTasks, setFilteredTasks] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -30,7 +28,7 @@ export default function TaskList({ refreshFlag }) {
   const statusIcons = {
     todo: Circle,
     inprogress: ArrowUpCircle,
-    completed: CheckCircle
+    completed: () => <AlertCircle className="h-5 w-5 text-gray-400" />
   };
 
   const fetchTasks = async () => {
@@ -103,6 +101,17 @@ export default function TaskList({ refreshFlag }) {
       setTasks(prev => prev.filter(t => t.id !== id));
     } catch (err) {
       setError('Failed to delete task.');
+    }
+  };
+
+  // New: Mark task as completed
+  const handleFinish = async (id) => {
+    try {
+      await taskAPI.updateTask(id, { status: 'completed' });
+      fetchTasks();
+    } catch (err) {
+      console.error("Failed to mark task as completed:", err.response?.data || err.message);
+      setError('Failed to mark task as completed.');
     }
   };
 
@@ -232,11 +241,21 @@ export default function TaskList({ refreshFlag }) {
 
                     <div className="ml-4 flex items-center gap-2">
                       <button
-                        onClick={() => {/* Handle edit */}}
+                        onClick={() => onEdit && onEdit(task)}
                         className="p-1 text-gray-400 hover:text-gray-500"
                       >
                         <Edit className="h-5 w-5" />
                       </button>
+                      {task.status !== "completed" && (
+                        <button
+                          onClick={() => handleFinish(task.id)}
+                          className="p-1 text-green-500 hover:text-green-600"
+                          title="Mark as Completed"
+                        >
+                          {/* You can use an icon or text */}
+                          ✓
+                        </button>
+                      )}
                       <button
                         onClick={() => handleDelete(task.id)}
                         className="p-1 text-gray-400 hover:text-red-500"

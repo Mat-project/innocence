@@ -41,7 +41,7 @@ export default function CalendarView({ refreshFlag }) {
   if (error) return <div className="text-red-600">{error}</div>;
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+    <div className="bg-white  dark:bg-gray-800 rounded-lg shadow-sm p-6">
       <FullCalendar
         plugins={[dayGridPlugin]}
         initialView="dayGridMonth"

@@ -4,21 +4,9 @@ import { Clock, Tag, MessageCircle, Paperclip } from 'lucide-react';
 import { taskAPI } from '../../service/api';
 
 const statusColumns = {
-  todo: {
-    title: 'To Do',
-    items: [],
-    color: 'bg-gray-100 dark:bg-gray-700',
-  },
-  inprogress: {
-    title: 'In Progress',
-    items: [],
-    color: 'bg-blue-50 dark:bg-blue-900',
-  },
-  completed: {
-    title: 'Completed',
-    items: [],
-    color: 'bg-green-50 dark:bg-green-900',
-  },
+  todo: { title: 'To Do', items: [], color: 'bg-gray-100 dark:bg-gray-700' },
+  inprogress: { title: 'In Progress', items: [], color: 'bg-blue-50 dark:bg-blue-900' },
+  completed: { title: 'Completed', items: [], color: 'bg-green-50 dark:bg-green-900' },
 };
 
 const priorityColors = {
@@ -37,7 +25,13 @@ export default function KanbanBoard({ refreshFlag, onStatusChange }) {
     try {
       const response = await taskAPI.getTasks();
       const tasks = response.data;
-      const newColumns = { ...statusColumns };
+
+      // Reset columns before populating to avoid duplicates
+      const newColumns = {
+        todo: { ...statusColumns.todo, items: [] },
+        inprogress: { ...statusColumns.inprogress, items: [] },
+        completed: { ...statusColumns.completed, items: [] },
+      };
 
       tasks.forEach((task) => {
         if (newColumns[task.status]) {
@@ -63,24 +57,21 @@ export default function KanbanBoard({ refreshFlag, onStatusChange }) {
     const { source, destination } = result;
     if (source.droppableId === destination.droppableId && source.index === destination.index) return;
 
-    const sourceColumn = columns[source.droppableId];
-    const destColumn = columns[destination.droppableId];
+    // Clone state
+    const newColumns = JSON.parse(JSON.stringify(columns));
 
-    const sourceItems = Array.from(sourceColumn.items);
-    const [removed] = sourceItems.splice(source.index, 1);
-    removed.status = destination.droppableId;
+    const sourceColumn = newColumns[source.droppableId];
+    const destColumn = newColumns[destination.droppableId];
 
-    const destItems = Array.from(destColumn.items);
-    destItems.splice(destination.index, 0, removed);
+    const [movedTask] = sourceColumn.items.splice(source.index, 1);
+    movedTask.status = destination.droppableId;
 
-    setColumns({
-      ...columns,
-      [source.droppableId]: { ...sourceColumn, items: sourceItems },
-      [destination.droppableId]: { ...destColumn, items: destItems },
-    });
+    destColumn.items.splice(destination.index, 0, movedTask);
+
+    setColumns(newColumns); // Update state properly
 
     try {
-      await taskAPI.updateTask(removed.id, { status: removed.status });
+      await taskAPI.updateTask(movedTask.id, { status: movedTask.status });
       if (onStatusChange) onStatusChange();
     } catch (err) {
       console.error('Failed to update task status.');
