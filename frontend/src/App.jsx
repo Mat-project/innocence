@@ -3,6 +3,7 @@ import LoginForm from './component/auth/LoginForm';
 import RegisterForm from './component/auth/RegisterForm';
 import DashboardLayout from './component/layout/DashboardLayout';
 import TaskPage from './pages/task/TaskPage';
+import NotificationsPage from "./component/notifications/NotificationsPage";
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Dashboard from './component/dashboard/Dashboard';
@@ -40,8 +41,9 @@ function App() {
             <Route path="/" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="tasks" element={<TaskPage />} />
-              {/* Add more protected routes as needed */}
+              <Route path="notifications" element={<NotificationsPage />} />
             </Route>
+            
             {/* Catch-all route for 404 */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

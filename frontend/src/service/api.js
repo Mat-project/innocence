@@ -14,3 +14,8 @@ export const taskAPI = {
   updateTask: (id, data) => api.patch(`/api/tasks/${id}/`, data),
   deleteTask: (id) => api.delete(`/api/tasks/${id}/`),
 };
+
+export const notificationAPI = {
+  getNotifications: () => api.get('/api/notifications/'),
+  markAsRead: (id) => api.patch(`/api/notifications/${id}/read/`, {}),
+};

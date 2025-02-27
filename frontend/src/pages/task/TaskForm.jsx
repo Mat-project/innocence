@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { PlusCircle } from 'lucide-react';
+import { PlusCircle, AlertCircle } from 'lucide-react';
 import { taskAPI } from '../../service/api';
 
 export default function TaskForm({ onTaskCreated, initialData = {}, onCancelEdit }) {
@@ -9,7 +9,7 @@ export default function TaskForm({ onTaskCreated, initialData = {}, onCancelEdit
     description: initialData.description || '',
     status: initialData.status || 'todo',
     priority: initialData.priority || 'medium',
-    dueDate: initialData.dueDate || '',
+    due_date: initialData.due_date || '',  // Use due_date to match backend
     category: initialData.category || '',
     assignedTo: initialData.assignedTo || '',
   });
@@ -23,17 +23,25 @@ export default function TaskForm({ onTaskCreated, initialData = {}, onCancelEdit
       description: initialData.description || '',
       status: initialData.status || 'todo',
       priority: initialData.priority || 'medium',
-      dueDate: initialData.dueDate || '',
+      due_date: initialData.due_date || '',
       category: initialData.category || '',
       assignedTo: initialData.assignedTo || '',
     });
   }, [initialData]);
+
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
       let response;
+      // If in edit mode update the task (which can change its status)
       if (isEditMode) {
         response = await taskAPI.updateTask(initialData.id, formData);
       } else {
@@ -46,7 +54,7 @@ export default function TaskForm({ onTaskCreated, initialData = {}, onCancelEdit
           description: '',
           status: 'todo',
           priority: 'medium',
-          dueDate: '',
+          due_date: '',
           category: '',
           assignedTo: '',
         });
@@ -61,9 +69,10 @@ export default function TaskForm({ onTaskCreated, initialData = {}, onCancelEdit
   };
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 space-y-4">
+    <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 md:p-6 space-y-4">
       {error && (
-        <div className="p-3 rounded bg-red-100 border border-red-200 text-red-700 text-sm">
+        <div className="p-3 rounded bg-red-100 dark:bg-red-900 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 text-sm flex items-center">
+          <AlertCircle className="h-4 w-4 mr-2" />
           {error}
         </div>
       )}
@@ -76,7 +85,7 @@ export default function TaskForm({ onTaskCreated, initialData = {}, onCancelEdit
             type="text"
             name="title"
             value={formData.title}
-            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+            onChange={handleChange}
             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
             required
           />
@@ -88,7 +97,7 @@ export default function TaskForm({ onTaskCreated, initialData = {}, onCancelEdit
           <textarea
             name="description"
             value={formData.description}
-            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+            onChange={handleChange}
             rows="3"
             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
           />
@@ -101,7 +110,7 @@ export default function TaskForm({ onTaskCreated, initialData = {}, onCancelEdit
             <select
               name="priority"
               value={formData.priority}
-              onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
+              onChange={handleChange}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
             >
               <option value="low">Low</option>
@@ -114,25 +123,30 @@ export default function TaskForm({ onTaskCreated, initialData = {}, onCancelEdit
             <select
               name="status"
               value={formData.status}
-              onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+              onChange={handleChange}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
             >
               <option value="todo">To Do</option>
               <option value="inprogress">In Progress</option>
               <option value="completed">Completed</option>
             </select>
+            {isEditMode && initialData.status === 'completed' && (
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                Editing a finished task will reopen it. You can change its status.
+              </p>
+            )}
           </div>
         </div>
-
+        
         {/* Due Date and Category */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Due Date</label>
             <input
               type="datetime-local"
-              name="dueDate"
-              value={formData.dueDate}
-              onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
+              name="due_date"
+              value={formData.due_date}
+              onChange={handleChange}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
             />
           </div>
@@ -142,7 +156,7 @@ export default function TaskForm({ onTaskCreated, initialData = {}, onCancelEdit
               type="text"
               name="category"
               value={formData.category}
-              onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+              onChange={handleChange}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
             />
           </div>
@@ -155,7 +169,7 @@ export default function TaskForm({ onTaskCreated, initialData = {}, onCancelEdit
             type="text"
             name="assignedTo"
             value={formData.assignedTo}
-            onChange={(e) => setFormData({ ...formData, assignedTo: e.target.value })}
+            onChange={handleChange}
             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
           />
         </div>
@@ -164,9 +178,7 @@ export default function TaskForm({ onTaskCreated, initialData = {}, onCancelEdit
       <button
         type="submit"
         disabled={loading}
-        className={`w-full mt-6 px-4 py-2 border border-transparent text-black dark:text-white rounded-md shadow-sm text-sm font-medium bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 ${
-          loading ? 'opacity-75 cursor-not-allowed' : ''
-        }`}
+        className={`w-full mt-6 px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors ${loading ? 'opacity-75 cursor-not-allowed' : ''}`}
       >
         {loading ? (isEditMode ? 'Updating Task...' : 'Creating Task...') : (isEditMode ? 'Update Task' : 'Create Task')}
       </button>
@@ -175,7 +187,7 @@ export default function TaskForm({ onTaskCreated, initialData = {}, onCancelEdit
         <button
           type="button"
           onClick={onCancelEdit}
-          className="w-full mt-2 px-4 py-2 border border-gray-300 text-black rounded-md shadow-sm text-sm font-medium dark:text-gray-300 bg-white dark:bg-gray-600 hover:bg-gray-100 dark:hover:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          className="w-full mt-2 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
         >
           Cancel Edit
         </button>

@@ -1,21 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { Link, Outlet, NavLink, useLocation } from 'react-router-dom';
+import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import ThemeToggle from '../common/ThemeToggle';
 import UserMenu from '../common/UserMenu';
-import Navigation from '../dashboard/Navigation'; // Import the Navigation component
+import Navigation from '../dashboard/Navigation';
+import { Bell } from 'lucide-react';
+import NotificationsModal from '../notifications/NotificationsModal';
 
 const DashboardLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
-  const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
   const userData = JSON.parse(localStorage.getItem('userData')) || {};
 
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (!event.target.closest('.profile-menu')) setProfileOpen(false);
-      if (!event.target.closest('.notifications-menu')) setNotificationsOpen(false);
       if (!event.target.closest('.search-container')) setSearchOpen(false);
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -36,7 +38,6 @@ const DashboardLayout = () => {
               <span className="text-xl font-semibold">Productivity Tool</span>
             </Link>
           </div>
-          {/* Render the imported Navigation component */}
           <div className="px-4">
             <Navigation />
           </div>
@@ -71,6 +72,13 @@ const DashboardLayout = () => {
             {/* Right section */}
             <div className="flex items-center space-x-4">
               <ThemeToggle />
+              <button
+                onClick={() => setShowNotifications(true)}
+                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                aria-label="View Notifications"
+              >
+                <Bell className="w-6 h-6 text-gray-600 dark:text-gray-300" />
+              </button>
               <UserMenu />
             </div>
           </div>
@@ -81,6 +89,10 @@ const DashboardLayout = () => {
           <Outlet />
         </main>
       </div>
+      {/* Render Notifications Modal if toggled */}
+      {showNotifications && (
+        <NotificationsModal onClose={() => setShowNotifications(false)} />
+      )}
     </div>
   );
 };

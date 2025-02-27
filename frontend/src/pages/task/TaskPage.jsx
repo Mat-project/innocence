@@ -162,11 +162,11 @@ export default function TaskPage() {
             </div>
           </div>
         ) : (
-          <div className="w-full">
-            {viewMode === 'list' && <TaskList refreshFlag={refreshFlag} onEdit={handleEditTask} />}
-            {viewMode === 'kanban' && <KanbanBoard refreshFlag={refreshFlag} onStatusChange={handleTaskCreated} />}
-            {viewMode === 'calendar' && <CalendarView refreshFlag={refreshFlag} />}
-          </div>
+<div className="container mx-auto w-full p-4 md:p-6">
+  {viewMode === 'list' && <TaskList refreshFlag={refreshFlag} onEdit={handleEditTask} />}
+  {viewMode === 'kanban' && <KanbanBoard refreshFlag={refreshFlag} onStatusChange={handleTaskCreated} />}
+  {viewMode === 'calendar' && <CalendarView refreshFlag={refreshFlag} />}
+</div>
         )}
       </div>
     </div>

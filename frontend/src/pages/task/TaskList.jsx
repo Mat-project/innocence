@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Search, AlertCircle, Circle, ArrowUpCircle, Trash2, Edit, Tag, Calendar 
+  Search, AlertCircle, Circle, ArrowUpCircle, Trash2, Edit, Tag, Calendar, Check 
 } from 'lucide-react';
 import { taskAPI } from '../../service/api';
 
@@ -20,15 +20,15 @@ export default function TaskList({ refreshFlag, onEdit }) {
   });
 
   const priorityColors = {
-    low: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-    medium: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
-    high: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+    low: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
+    medium: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300',
+    high: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
   };
 
   const statusIcons = {
     todo: Circle,
     inprogress: ArrowUpCircle,
-    completed: () => <AlertCircle className="h-5 w-5 text-gray-400" />
+    completed: Check
   };
 
   const fetchTasks = async () => {
@@ -88,7 +88,6 @@ export default function TaskList({ refreshFlag, onEdit }) {
             return dueDate >= today && dueDate <= weekAhead;
           });
           break;
-        // Add more date range cases as needed
       }
     }
 
@@ -96,15 +95,31 @@ export default function TaskList({ refreshFlag, onEdit }) {
   }, [filters, tasks]);
 
   const handleDelete = async (id) => {
+    const confirmDelete = window.confirm("Are you sure you want to delete this task?");
+    if (!confirmDelete) return;
+    
     try {
       await taskAPI.deleteTask(id);
+      // Remove the deleted task from both tasks and filteredTasks state arrays.
       setTasks(prev => prev.filter(t => t.id !== id));
+      setFilteredTasks(prev => prev.filter(t => t.id !== id));
     } catch (err) {
       setError('Failed to delete task.');
     }
   };
 
-  // New: Mark task as completed
+  // New function: Mark task as in-progress
+  const handleStart = async (id) => {
+    try {
+      await taskAPI.updateTask(id, { status: 'inprogress' });
+      fetchTasks();
+    } catch (err) {
+      console.error("Failed to start task:", err.response?.data || err.message);
+      setError('Failed to start task.');
+    }
+  };
+
+  // Existing finish function to mark as completed (for tasks already in progress)
   const handleFinish = async (id) => {
     try {
       await taskAPI.updateTask(id, { status: 'completed' });
@@ -126,8 +141,8 @@ export default function TaskList({ refreshFlag, onEdit }) {
   return (
     <div className="space-y-4">
       {/* Search and Filters */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4">
-        <div className="flex flex-col sm:flex-row gap-4">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 border border-gray-200 dark:border-gray-700">
+        <div className="flex flex-col space-y-3 lg:flex-row lg:space-y-0 lg:space-x-4">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
             <input
@@ -139,11 +154,11 @@ export default function TaskList({ refreshFlag, onEdit }) {
             />
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <select
               value={filters.status}
               onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
-              className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
+              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white text-sm"
             >
               <option value="all">All Status</option>
               <option value="todo">To Do</option>
@@ -154,7 +169,7 @@ export default function TaskList({ refreshFlag, onEdit }) {
             <select
               value={filters.priority}
               onChange={(e) => setFilters(prev => ({ ...prev, priority: e.target.value }))}
-              className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
+              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white text-sm"
             >
               <option value="all">All Priority</option>
               <option value="low">Low</option>
@@ -165,7 +180,7 @@ export default function TaskList({ refreshFlag, onEdit }) {
             <select
               value={filters.dateRange}
               onChange={(e) => setFilters(prev => ({ ...prev, dateRange: e.target.value }))}
-              className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
+              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white text-sm"
             >
               <option value="all">All Dates</option>
               <option value="today">Due Today</option>
@@ -176,13 +191,16 @@ export default function TaskList({ refreshFlag, onEdit }) {
       </div>
 
       {error && (
-        <div className="bg-red-100 border border-red-200 text-red-700 px-4 py-3 rounded relative">
-          {error}
+        <div className="bg-red-100 dark:bg-red-900 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded relative">
+          <div className="flex items-center">
+            <AlertCircle className="h-5 w-5 mr-2" />
+            {error}
+          </div>
         </div>
       )}
 
       {/* Task List */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden border border-gray-200 dark:border-gray-700">
         {filteredTasks.length === 0 ? (
           <div className="text-center py-12">
             <AlertCircle className="mx-auto h-12 w-12 text-gray-400" />
@@ -197,11 +215,11 @@ export default function TaskList({ refreshFlag, onEdit }) {
               const StatusIcon = statusIcons[task.status];
               return (
                 <li key={task.id} className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                  <div className="flex items-start justify-between">
+                  <div className="flex flex-col md:flex-row md:items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <StatusIcon className="h-5 w-5 text-gray-400" />
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                        <StatusIcon className={`h-5 w-5 ${task.status === 'completed' ? 'text-green-500' : task.status === 'inprogress' ? 'text-blue-500' : 'text-gray-400'}`} />
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white break-words">
                           {task.title}
                         </h3>
                         <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${priorityColors[task.priority]}`}>
@@ -209,15 +227,15 @@ export default function TaskList({ refreshFlag, onEdit }) {
                         </span>
                       </div>
                       
-                      <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                      <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 break-words">
                         {task.description}
                       </p>
                       
                       <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-                        {task.dueDate && (
+                        {task.due_date && (
                           <div className="flex items-center">
                             <Calendar className="h-4 w-4 mr-1" />
-                            {new Date(task.dueDate).toLocaleDateString()}
+                            {new Date(task.due_date).toLocaleDateString()}
                           </div>
                         )}
                         
@@ -239,20 +257,28 @@ export default function TaskList({ refreshFlag, onEdit }) {
                       </div>
                     </div>
 
-                    <div className="ml-4 flex items-center gap-2">
+                    <div className="flex items-center gap-2 mt-2 md:mt-0">
                       <button
                         onClick={() => onEdit && onEdit(task)}
-                        className="p-1 text-gray-400 hover:text-gray-500"
+                        className="p-1 text-gray-400 hover:text-gray-500 dark:hover:text-gray-300"
                       >
                         <Edit className="h-5 w-5" />
                       </button>
-                      {task.status !== "completed" && (
+                      {task.status === "todo" && (
+                        <button
+                          onClick={() => handleStart(task.id)}
+                          className="p-1 text-blue-500 hover:text-blue-600"
+                          title="Start Task"
+                        >
+                          Start
+                        </button>
+                      )}
+                      {task.status === "inprogress" && (
                         <button
                           onClick={() => handleFinish(task.id)}
                           className="p-1 text-green-500 hover:text-green-600"
                           title="Mark as Completed"
                         >
-                          {/* You can use an icon or text */}
                           ✓
                         </button>
                       )}
