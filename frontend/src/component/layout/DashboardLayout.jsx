@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import ThemeToggle from '../common/ThemeToggle';
+/* import ThemeToggle from '../common/ThemeToggle'; */
 import UserMenu from '../common/UserMenu';
 import Navigation from '../dashboard/Navigation';
 import { Bell } from 'lucide-react';
@@ -71,7 +71,7 @@ const DashboardLayout = () => {
 
             {/* Right section */}
             <div className="flex items-center space-x-4">
-              <ThemeToggle />
+{/*               <ThemeToggle /> */}
               <button
                 onClick={() => setShowNotifications(true)}
                 className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"

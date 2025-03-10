@@ -9,14 +9,14 @@ export default function TaskForm({ onTaskCreated, initialData = {}, onCancelEdit
     description: initialData.description || '',
     status: initialData.status || 'todo',
     priority: initialData.priority || 'medium',
-    due_date: initialData.due_date || '',  // Use due_date to match backend
+    due_date: initialData.due_date || '', // Use due_date to match backend
     category: initialData.category || '',
     assignedTo: initialData.assignedTo || '',
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // When editing, update the form data accordingly.
+  // Update form data when editing
   useEffect(() => {
     setFormData({
       title: initialData.title || '',
@@ -38,14 +38,28 @@ export default function TaskForm({ onTaskCreated, initialData = {}, onCancelEdit
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
+    // Client-side validation example:
+    if (formData.title.trim() === '') {
+      setError('Title is required.');
+      return;
+    }
+    // You can add more validations here if needed
+
     setLoading(true);
     try {
+      // Map formData keys to match model/serializer field names
+      const payload = {
+        ...formData,
+        assigned_to: formData.assignedTo, // map assignedTo to assigned_to
+      };
+      delete payload.assignedTo; // remove the old key
+
       let response;
-      // If in edit mode update the task (which can change its status)
       if (isEditMode) {
-        response = await taskAPI.updateTask(initialData.id, formData);
+        response = await taskAPI.updateTask(initialData.id, payload);
       } else {
-        response = await taskAPI.createTask(formData);
+        response = await taskAPI.createTask(payload);
       }
       onTaskCreated(response.data);
       if (!isEditMode) {
@@ -62,6 +76,7 @@ export default function TaskForm({ onTaskCreated, initialData = {}, onCancelEdit
         onCancelEdit();
       }
     } catch (err) {
+      // Display backend error details if any
       setError(err.response?.data?.detail || 'Failed to create/update task');
     } finally {
       setLoading(false);

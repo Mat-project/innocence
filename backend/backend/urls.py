@@ -22,4 +22,5 @@ urlpatterns = [
     path('api/', include('api.urls')),
     path('api/tasks/', include('task.urls')),  # Include task routes here
     path('api/notifications/', include('notification.urls')),  # added notifications
+    path('api/', include('file.urls')),  # Include file app URLs under the "api/" prefix
 ]

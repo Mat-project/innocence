@@ -1,4 +1,5 @@
 from django.db import models
+from django.conf import settings
 
 class Task(models.Model):
     STATUS_CHOICES = [
@@ -11,6 +12,13 @@ class Task(models.Model):
         ('medium', 'Medium'),
         ('high', 'High'),
     ]
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='tasks',
+        null=True,  # Allow null temporarily
+        blank=True
+    )
     title = models.CharField(max_length=100)
     description = models.TextField(blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='todo')

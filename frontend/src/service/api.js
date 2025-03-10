@@ -5,6 +5,14 @@ export const authAPI = {
   register: (data) => api.post('/api/auth/register/', data),
   logout: () => api.post('/api/auth/logout/'),
   getProfile: () => api.get('/api/auth/profile/'),
+  updateProfile: (data) => {
+    // If data is FormData, let browser set content type; otherwise, JSON.
+    const isFormData = data instanceof FormData;
+    const headers = isFormData
+      ? { 'Content-Type': 'multipart/form-data' }
+      : { 'Content-Type': 'application/json' };
+    return api.patch('/api/auth/profile/', data, { headers });
+  },
   forgotPassword: (data) => api.post('/api/auth/forgot-password/', data),
 };
 
@@ -18,4 +26,9 @@ export const taskAPI = {
 export const notificationAPI = {
   getNotifications: () => api.get('/api/notifications/'),
   markAsRead: (id) => api.patch(`/api/notifications/${id}/read/`, {}),
+};
+
+export const fileConverterAPI = {
+  convertFile: (formData) => 
+    api.post('/api/convert/', formData,{ headers: { 'Content-Type': 'multipart/form-data' }, responseType: 'blob' }),
 };

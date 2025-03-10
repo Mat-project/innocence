@@ -57,7 +57,6 @@ export default function RegisterForm() {
       ...prev,
       [name]: value
     }));
-    // Clear error when user starts typing
     if (error) setError('');
   };
 
@@ -73,11 +72,7 @@ export default function RegisterForm() {
     }
 
     try {
-      console.log('Sending registration data:', formData);
       const response = await authAPI.register(formData);
-      console.log('Registration response:', response.data);
-
-      // If registration returns tokens, store them
       if (response.data.tokens) {
         const { access, refresh } = response.data.tokens;
         localStorage.setItem('accessToken', access);
@@ -85,20 +80,14 @@ export default function RegisterForm() {
         localStorage.setItem('userData', JSON.stringify(response.data.user));
         navigate('/dashboard');
       } else {
-        // If no tokens, redirect to login
         navigate('/login');
       }
     } catch (err) {
-      console.error('Registration error:', err);
-      console.error('Error details:', err.response?.data);
-      
-      // Handle different types of error responses
       let errorMessage = '';
       const errorData = err.response?.data;
       
       if (errorData) {
         if (errorData.details && typeof errorData.details === 'object') {
-          // Handle validation errors
           const errors = [];
           Object.entries(errorData.details).forEach(([field, message]) => {
             if (Array.isArray(message)) {
@@ -107,18 +96,16 @@ export default function RegisterForm() {
               errors.push(message);
             }
           });
-          errorMessage = errors.join('\\n');
+          errorMessage = errors.join('\n');
         } else if (errorData.error) {
           errorMessage = errorData.error;
         } else if (errorData.details) {
           errorMessage = errorData.details;
         }
       }
-      
       if (!errorMessage) {
         errorMessage = err.message || 'Registration failed. Please try again.';
       }
-      
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -126,8 +113,8 @@ export default function RegisterForm() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-900 dark:to-gray-800 py-12 px-4 sm:px-6 lg:px-8 fixed inset-0 overflow-y-auto">
-      <div className="max-w-md w-full space-y-8 bg-white dark:bg-gray-800 shadow-2xl rounded-2xl p-8 mx-auto my-auto">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-900 dark:to-black py-12 px-4 sm:px-6 lg:px-8 fixed inset-0 overflow-y-auto">
+      <div className="max-w-md w-full space-y-8 bg-white dark:bg-gray-800 shadow-2xl rounded-2xl p-8">
         <div>
           <h2 className="mt-2 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
             Create Your Account

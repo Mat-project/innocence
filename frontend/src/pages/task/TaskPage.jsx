@@ -107,16 +107,15 @@ export default function TaskPage() {
             Task Management
           </h1>
           
-          <div className="flex items-center gap-2 md:gap-4 w-full sm:w-auto">
+          <div className="flex items-center gap-2 md:gap-4">
             <button
               onClick={handleNewTask}
               className="flex items-center gap-1 md:gap-2 px-3 md:px-4 py-1.5 md:py-2 rounded-md bg-indigo-600 text-black hover:bg-indigo-700 dark:text-white transition-colors text-sm md:text-base"
             >
               <PlusCircle className="w-4 h-4" />
-              <span>New Task</span>
             </button>
-            
-            <div className="bg-gray-100 text-black dark:bg-gray-700 rounded-lg p-1 flex gap-1 overflow-x-auto w-full sm:w-auto">
+
+            <div className="flex gap-2">
               {viewOptions.map(option => (
                 <button
                   key={option.id}
@@ -124,14 +123,16 @@ export default function TaskPage() {
                     setViewMode(option.id);
                     setShowForm(false); // Hide form when switching views
                   }}
-                  onMouseEnter={() => setHoveredButton(option.id)}
-                  onMouseLeave={() => setHoveredButton(null)}
-                  className={`flex items-center gap-1 md:gap-2 px-3 md:px-4 py-1.5 md:py-2 rounded-md transition-all whitespace-nowrap text-sm md:text-base ${
-                    getButtonStyles(option)
-                  }`}
+                  // Use group and relative positioning, and remove inline text
+                  className={`relative group flex items-center justify-center w-10 h-10 md:w-12 md:h-12 rounded-md transition-all ${getButtonStyles(option)}`}
                 >
-                  <option.icon className={`w-4 h-4 ${getIconColor(option)}`} />
-                  <span className="hidden sm:inline">{option.label}</span>
+                  <option.icon className={`w-5 h-5 ${getIconColor(option)}`} />
+                  <span
+                    // Tooltip is hidden by default, shown on hover
+                    className="absolute bottom-[-28px] left-1/2 -translate-x-1/2 hidden whitespace-nowrap bg-gray-800 dark:bg-gray-700 text-white text-xs rounded py-1 px-2 group-hover:block z-10"
+                  >
+                    {option.label}
+                  </span>
                 </button>
               ))}
             </div>

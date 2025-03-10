@@ -7,6 +7,11 @@ import NotificationsPage from "./component/notifications/NotificationsPage";
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Dashboard from './component/dashboard/Dashboard';
+import ProfilePage from './pages/profile/ProfilePage';
+import LandingPage from './pages/landing/LandingPage';
+import AuthLayout from './component/layout/AuthLayout';
+import FileConverterPage from './pages/FileConvertor/FileConverterPage';
+import About from './component/LandingComponent/about';
 
 // Protected Route component
 const ProtectedRoute = ({ children }) => {
@@ -21,7 +26,7 @@ const ProtectedRoute = ({ children }) => {
   }
   
   if (!isAuthenticated) {
-    return <Navigate to="/login" />;
+    return <Navigate to="/landing" />;
   }
   
   return children;
@@ -30,25 +35,37 @@ const ProtectedRoute = ({ children }) => {
 function App() {
   return (
     <Router>
-     <ThemeProvider>
+      <ThemeProvider>
         <AuthProvider>
           <Routes>
-            <Route path="/" element={<Navigate to="/dashboard" />} />
-            <Route path="/login" element={<LoginForm />} />
-            <Route path="/register" element={<RegisterForm />} />
+            {/* Public routes */}
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/login" element={
+              <AuthLayout>
+                <LoginForm />
+              </AuthLayout>
+            } />
+            <Route path="/register" element={
+              <AuthLayout>
+                <RegisterForm />
+              </AuthLayout>
+            } />
             
             {/* Protected Routes */}
             <Route path="/" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="tasks" element={<TaskPage />} />
               <Route path="notifications" element={<NotificationsPage />} />
+              <Route path="profile" element={<ProfilePage />} />
+              <Route path="file-convertor" element={<FileConverterPage />} />
             </Route>
-            
+
             {/* Catch-all route for 404 */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </AuthProvider>
-     </ThemeProvider>
+      </ThemeProvider>
     </Router>
   );
 }
