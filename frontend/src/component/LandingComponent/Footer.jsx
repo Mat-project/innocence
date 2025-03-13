@@ -64,7 +64,7 @@ export default function Footer() {
               </div>
               <div className="text-xl font-bold text-gray-800 dark:text-gray-100">
                 <Link to="/" className="flex items-center gap-1 hover:text-indigo-500 dark:hover:text-indigo-300 transition-colors">
-                  <span>Toolverse</span> Toolkit
+                  <span>TaskVerse</span>
                 </Link>
               </div>
             </div>

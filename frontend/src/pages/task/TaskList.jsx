@@ -1,95 +1,159 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Search, AlertCircle, Circle, ArrowUpCircle, Trash2, Edit, Tag, Calendar, Check 
+  Search, AlertCircle, Circle, ArrowUpCircle, Trash2, Edit, Tag, Calendar, Check,
+  Clock, User, Filter, ChevronDown, X
 } from 'lucide-react';
 import { taskAPI } from '../../service/api';
+import { format, isValid, parseISO, isToday, addDays, isWithinInterval } from 'date-fns';
 
-export default function TaskList({ refreshFlag, onEdit }) {
+export default function TaskList({ refreshFlag, onEdit, onTaskUpdated, searchQuery, quickFilter, statusFilter, priorityFilter }) {
   const [tasks, setTasks] = useState([]);
   const [filteredTasks, setFilteredTasks] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  
-  // Filter states
+  const [showFilters, setShowFilters] = useState(false);
+
+  // Local filter states - synchronized with parent props
   const [filters, setFilters] = useState({
-    status: 'all',
-    priority: 'all',
-    search: '',
+    status: statusFilter || 'all',
+    priority: priorityFilter || 'all',
+    search: searchQuery || '',
     category: 'all',
-    dateRange: 'all'
+    dateRange: quickFilter || 'all'
   });
 
+  // Categories extracted from tasks
+  const [categories, setCategories] = useState([]);
+
   const priorityColors = {
-    low: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
-    medium: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300',
-    high: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
+    low: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300',
+    medium: 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300',
+    high: 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300'
   };
 
   const statusIcons = {
-    todo: Circle,
-    inprogress: ArrowUpCircle,
-    completed: Check
+    todo: <Circle className="h-5 w-5" />,
+    inprogress: <ArrowUpCircle className="h-5 w-5 text-blue-500" />,
+    completed: <Check className="h-5 w-5 text-green-500" />
   };
 
   const fetchTasks = async () => {
     setLoading(true);
     try {
       const response = await taskAPI.getTasks();
-      setTasks(response.data);
-      setFilteredTasks(response.data);
+      setTasks(response.data || []);
+      
+      // Extract unique categories for filter dropdown
+      const uniqueCategories = [...new Set(response.data
+        .filter(task => task.category)
+        .map(task => task.category))];
+      setCategories(uniqueCategories);
     } catch (err) {
-      setError('Failed to load tasks.');
+      console.error("Failed to load tasks:", err);
+      setError('Failed to load tasks. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
+  // Initial fetch on component mount and when refreshFlag changes
   useEffect(() => {
     fetchTasks();
   }, [refreshFlag]);
 
+  // Sync external filters with local state
   useEffect(() => {
-    // Apply filters
-    let result = [...tasks];
+    setFilters(prev => ({
+      ...prev,
+      search: searchQuery || '',
+      status: statusFilter || 'all',
+      priority: priorityFilter || 'all',
+      dateRange: quickFilter === 'today' ? 'today' : 
+                quickFilter === 'week' ? 'week' : 
+                quickFilter === 'overdue' ? 'overdue' :
+                quickFilter === 'high' ? 'high' : 'all'
+    }));
+  }, [searchQuery, statusFilter, priorityFilter, quickFilter]);
 
+  // Apply filters
+  useEffect(() => {
+    if (!tasks.length) return;
+    
+    let result = [...tasks];
+    const today = new Date();
+
+    // Apply search filter
     if (filters.search) {
+      const searchLower = filters.search.toLowerCase();
       result = result.filter(task => 
-        task.title.toLowerCase().includes(filters.search.toLowerCase()) ||
-        task.description.toLowerCase().includes(filters.search.toLowerCase())
+        (task.title && task.title.toLowerCase().includes(searchLower)) ||
+        (task.description && task.description.toLowerCase().includes(searchLower))
       );
     }
 
+    // Apply status filter
     if (filters.status !== 'all') {
       result = result.filter(task => task.status === filters.status);
     }
-
+    
+    // Apply priority filter
     if (filters.priority !== 'all') {
       result = result.filter(task => task.priority === filters.priority);
     }
 
+    // Apply category filter
     if (filters.category !== 'all') {
       result = result.filter(task => task.category === filters.category);
     }
-
-    // Date range filtering
+    
+    // Apply date range filter
     if (filters.dateRange !== 'all') {
-      const today = new Date();
-      switch (filters.dateRange) {
-        case 'today':
-          result = result.filter(task => {
-            const dueDate = new Date(task.dueDate);
-            return dueDate.toDateString() === today.toDateString();
-          });
-          break;
-        case 'week':
-          const weekAhead = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
-          result = result.filter(task => {
-            const dueDate = new Date(task.dueDate);
-            return dueDate >= today && dueDate <= weekAhead;
-          });
-          break;
-      }
+      result = result.filter(task => {
+        // Skip tasks without due dates
+        if (!task.due_date) return filters.dateRange === 'high' ? task.priority === 'high' : false;
+        
+        const dueDate = parseISO(task.due_date);
+        if (!isValid(dueDate)) return filters.dateRange === 'high' ? task.priority === 'high' : false;
+        
+        switch (filters.dateRange) {
+          case 'today':
+            return isToday(dueDate);
+          case 'week':
+            const weekFromNow = addDays(today, 7);
+            return isWithinInterval(dueDate, { start: today, end: weekFromNow });
+          case 'overdue':
+            return dueDate < today && task.status !== 'completed';
+          case 'high':
+            return task.priority === 'high';
+      default:
+            return true;
     }
+      });
+    }
+
+    // Sort tasks: overdue first, then by due date, then completed last
+    result.sort((a, b) => {
+      // Completed tasks go to the bottom
+      if (a.status === 'completed' && b.status !== 'completed') return 1;
+      if (a.status !== 'completed' && b.status === 'completed') return -1;
+      
+      // If neither has a due date
+      if (!a.due_date && !b.due_date) return 0;
+
+      // Tasks with due dates before those without
+      if (!a.due_date) return 1;
+      if (!b.due_date) return -1;
+      
+      const dateA = parseISO(a.due_date);
+      const dateB = parseISO(b.due_date);
+      
+      // Invalid dates go last
+      if (!isValid(dateA)) return 1;
+      if (!isValid(dateB)) return -1;
+      
+      // Sort by date
+      return dateA.getTime() - dateB.getTime();
+    });
 
     setFilteredTasks(result);
   }, [filters, tasks]);
@@ -100,98 +164,183 @@ export default function TaskList({ refreshFlag, onEdit }) {
     
     try {
       await taskAPI.deleteTask(id);
-      // Remove the deleted task from both tasks and filteredTasks state arrays.
-      setTasks(prev => prev.filter(t => t.id !== id));
-      setFilteredTasks(prev => prev.filter(t => t.id !== id));
+      setTasks(prev => prev.filter(task => task.id !== id));
+      fetchTasks(); // Refresh to ensure we have latest state
     } catch (err) {
-      setError('Failed to delete task.');
+      console.error("Failed to delete task:", err);
+      setError('Failed to delete task. Please try again.');
     }
   };
 
-  // New function: Mark task as in-progress
-  const handleStart = async (id) => {
+  const handleStatusChange = async (id, newStatus) => {
     try {
-      await taskAPI.updateTask(id, { status: 'inprogress' });
-      fetchTasks();
+      await taskAPI.updateTask(id, { status: newStatus });
+      await fetchTasks(); // Refresh tasks after status change
+      
+      // Notify parent component about the update
+      if (onTaskUpdated) {
+        onTaskUpdated();
+      }
     } catch (err) {
-      console.error("Failed to start task:", err.response?.data || err.message);
-      setError('Failed to start task.');
+      console.error(`Failed to update task status to ${newStatus}:`, err);
+      setError(`Failed to update task status. Please try again.`);
     }
   };
 
-  // Existing finish function to mark as completed (for tasks already in progress)
-  const handleFinish = async (id) => {
-    try {
-      await taskAPI.updateTask(id, { status: 'completed' });
-      fetchTasks();
-    } catch (err) {
-      console.error("Failed to mark task as completed:", err.response?.data || err.message);
-      setError('Failed to mark task as completed.');
+  // Format date for display
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    
+    const date = parseISO(dateString);
+    if (!isValid(date)) return 'Invalid date';
+    
+    const today = new Date();
+    const isTaskToday = isToday(date);
+    
+    if (isTaskToday) {
+      return `Today at ${format(date, 'h:mm a')}`;
     }
+    
+    return format(date, 'MMM d, yyyy h:mm a');
   };
 
-  if (loading) {
+  // Check if a date is overdue
+  const isOverdue = (dateString) => {
+    if (!dateString) return false;
+    
+    const date = parseISO(dateString);
+    if (!isValid(date)) return false;
+    
+    return date < new Date();
+  };
+
+  // Reset all filters
+  const clearFilters = () => {
+    setFilters({
+      status: 'all',
+      priority: 'all',
+      search: '',
+      category: 'all',
+      dateRange: 'all'
+    });
+  };
+
+  if (loading && tasks.length === 0) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
       </div>
     );
-  }
+    }
 
   return (
     <div className="space-y-4">
-      {/* Search and Filters */}
+      {/* Advanced Filters Panel */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 border border-gray-200 dark:border-gray-700">
-        <div className="flex flex-col space-y-3 lg:flex-row lg:space-y-0 lg:space-x-4">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search tasks..."
-              value={filters.search}
-              onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
-              className="pl-10 w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
-            />
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            <select
-              value={filters.status}
-              onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
-              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white text-sm"
+        <div className="flex flex-wrap gap-2 justify-between items-center">
+        <div className="flex items-center gap-2">
+            <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Filters</h3>
+            <button
+              onClick={() => setShowFilters(!showFilters)} 
+              className="flex items-center text-xs px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
             >
-              <option value="all">All Status</option>
-              <option value="todo">To Do</option>
-              <option value="inprogress">In Progress</option>
-              <option value="completed">Completed</option>
-            </select>
-
-            <select
-              value={filters.priority}
-              onChange={(e) => setFilters(prev => ({ ...prev, priority: e.target.value }))}
-              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white text-sm"
-            >
-              <option value="all">All Priority</option>
-              <option value="low">Low</option>
-              <option value="medium">Medium</option>
-              <option value="high">High</option>
-            </select>
-
-            <select
-              value={filters.dateRange}
-              onChange={(e) => setFilters(prev => ({ ...prev, dateRange: e.target.value }))}
-              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white text-sm"
-            >
-              <option value="all">All Dates</option>
-              <option value="today">Due Today</option>
-              <option value="week">Due This Week</option>
-            </select>
+              <Filter size={14} className="mr-1" />
+              {showFilters ? 'Hide Filters' : 'Show Filters'}
+              <ChevronDown size={14} className={`ml-1 transform transition-transform ${showFilters ? 'rotate-180' : ''}`} />
+            </button>
+            
+            {(filters.status !== 'all' || filters.priority !== 'all' || filters.category !== 'all' || filters.dateRange !== 'all') && (
+                <button
+                onClick={clearFilters}
+                className="flex items-center text-xs px-2 py-1 text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400"
+                >
+                <X size={14} className="mr-1" />
+                Clear Filters
+                </button>
+            )}
+            </div>
+          
+          <div className="text-sm text-gray-500 dark:text-gray-400">
+            {filteredTasks.length} {filteredTasks.length === 1 ? 'task' : 'tasks'}
           </div>
         </div>
+        
+        {/* Expandable filters */}
+        {showFilters && (
+          <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+            <div>
+              <label htmlFor="status-filter" className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+                Status
+              </label>
+              <select
+                id="status-filter"
+                value={filters.status}
+                onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
+                className="w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
+              >
+                <option value="all">All Status</option>
+                <option value="todo">To Do</option>
+                <option value="inprogress">In Progress</option>
+                <option value="completed">Completed</option>
+              </select>
       </div>
 
+            <div>
+              <label htmlFor="priority-filter" className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+                Priority
+              </label>
+              <select
+                id="priority-filter"
+                value={filters.priority}
+                onChange={(e) => setFilters(prev => ({ ...prev, priority: e.target.value }))}
+                className="w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
+              >
+                <option value="all">All Priorities</option>
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+              </select>
+            </div>
+            
+            <div>
+              <label htmlFor="category-filter" className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+                Category
+              </label>
+              <select
+                id="category-filter"
+                value={filters.category}
+                onChange={(e) => setFilters(prev => ({ ...prev, category: e.target.value }))}
+                className="w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
+              >
+                <option value="all">All Categories</option>
+                {categories.map((category, index) => (
+                  <option key={index} value={category}>{category}</option>
+                ))}
+              </select>
+            </div>
+            
+            <div>
+              <label htmlFor="date-filter" className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+                Due Date
+              </label>
+              <select
+                id="date-filter"
+                value={filters.dateRange}
+                onChange={(e) => setFilters(prev => ({ ...prev, dateRange: e.target.value }))}
+                className="w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
+                        >
+                <option value="all">All Dates</option>
+                <option value="today">Due Today</option>
+                <option value="week">Due This Week</option>
+                <option value="overdue">Overdue</option>
+              </select>
+            </div>
+          </div>
+                      )}
+                    </div>
+
       {error && (
-        <div className="bg-red-100 dark:bg-red-900 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded relative">
+        <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded-lg">
           <div className="flex items-center">
             <AlertCircle className="h-5 w-5 mr-2" />
             {error}
@@ -202,72 +351,127 @@ export default function TaskList({ refreshFlag, onEdit }) {
       {/* Task List */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden border border-gray-200 dark:border-gray-700">
         {filteredTasks.length === 0 ? (
-          <div className="text-center py-12">
-            <AlertCircle className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">No tasks found</h3>
-            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-              Try adjusting your search or filter criteria
+          <div className="text-center py-16">
+            <div className="inline-flex items-center justify-center h-16 w-16 rounded-full bg-gray-100 dark:bg-gray-700 mb-4">
+              <Search className="h-8 w-8 text-gray-500 dark:text-gray-400" />
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white">No tasks found</h3>
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 max-w-sm mx-auto">
+              {tasks.length > 0 
+                ? "Try adjusting your search or filter criteria to find what you're looking for."
+                : "Get started by creating your first task using the 'New Task' button."}
             </p>
-          </div>
+            
+            {(filters.status !== 'all' || filters.priority !== 'all' || filters.category !== 'all' || filters.dateRange !== 'all' || filters.search) && (
+                                    <button
+                onClick={clearFilters}
+                className="mt-4 inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
+                                    >
+                Clear all filters
+                                    </button>
+                                  )}
+                                </div>
         ) : (
           <ul className="divide-y divide-gray-200 dark:divide-gray-700">
-            {filteredTasks.map(task => {
-              const StatusIcon = statusIcons[task.status];
-              return (
-                <li key={task.id} className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                  <div className="flex flex-col md:flex-row md:items-start justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <StatusIcon className={`h-5 w-5 ${task.status === 'completed' ? 'text-green-500' : task.status === 'inprogress' ? 'text-blue-500' : 'text-gray-400'}`} />
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white break-words">
-                          {task.title}
-                        </h3>
-                        <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${priorityColors[task.priority]}`}>
-                          {task.priority}
-                        </span>
+            {filteredTasks.map(task => (
+              <li key={task.id} className={`p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors ${
+                task.status === 'completed' ? 'bg-gray-50/50 dark:bg-gray-800/50' : ''
+              }`}>
+                <div className="flex flex-col md:flex-row md:items-start gap-4">
+                  {/* Task status indicator */}
+                  <div className="flex-shrink-0">
+                    <div className={`h-8 w-8 rounded-full flex items-center justify-center ${
+                      task.status === 'completed' 
+                        ? 'bg-green-100 dark:bg-green-900/40 text-green-600 dark:text-green-400' 
+                        : task.status === 'inprogress'
+                        ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400'
+                        : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
+                    }`}>
+                      {statusIcons[task.status]}
+                        </div>
                       </div>
                       
-                      <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 break-words">
+                  {/* Task content */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center flex-wrap gap-2">
+                      <h3 className={`text-base font-medium break-words ${
+                        task.status === 'completed' 
+                          ? 'text-gray-500 dark:text-gray-400' 
+                          : 'text-gray-900 dark:text-white'
+                      }`}>
+                        {task.title}
+                      </h3>
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${priorityColors[task.priority]}`}>
+                        {task.priority}
+                      </span>
+                    </div>
+                    
+                        {task.description && (
+                      <p className={`mt-1 text-sm break-words ${
+                        task.status === 'completed'
+                          ? 'text-gray-400 dark:text-gray-500' 
+                          : 'text-gray-500 dark:text-gray-400'
+                      }`}>
                         {task.description}
                       </p>
-                      
-                      <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-                        {task.due_date && (
-                          <div className="flex items-center">
-                            <Calendar className="h-4 w-4 mr-1" />
-                            {new Date(task.due_date).toLocaleDateString()}
-                          </div>
                         )}
                         
-                        {task.category && (
-                          <div className="flex items-center">
-                            <Tag className="h-4 w-4 mr-1" />
-                            {task.category}
-                          </div>
-                        )}
-                        
-                        {task.assignedTo && (
-                          <div className="flex items-center">
-                            <div className="h-6 w-6 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center">
-                              {task.assignedTo.charAt(0).toUpperCase()}
+                    <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                          {task.due_date && (
+                        <div className={`flex items-center px-2 py-0.5 rounded-md ${
+                          task.status !== 'completed' && isOverdue(task.due_date) 
+                            ? 'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400' 
+                            : 'bg-gray-100 dark:bg-gray-700'
+                        }`}>
+                          <Clock className="h-3.5 w-3.5 mr-1" />
+                          <span className="whitespace-nowrap">
+                            {formatDate(task.due_date)}
+                            {task.status !== 'completed' && isOverdue(task.due_date) && ' (Overdue)'}
+                          </span>
                             </div>
-                            <span className="ml-1">{task.assignedTo}</span>
-                          </div>
-                        )}
+                          )}
+                          
+                          {task.category && (
+                        <div className="flex items-center px-2 py-0.5 rounded-md bg-gray-100 dark:bg-gray-700">
+                          <Tag className="h-3.5 w-3.5 mr-1" />
+                              {task.category}
+                            </div>
+                          )}
+                          
+                          {/* Assigned to */}
+                          {task.assigned_to && (
+                        <div className="flex items-center px-2 py-0.5 rounded-md bg-gray-100 dark:bg-gray-700">
+                          <User className="h-3.5 w-3.5 mr-1" />
+                              {task.assigned_to}
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
-
-                    <div className="flex items-center gap-2 mt-2 md:mt-0">
+                      
+                  {/* Action buttons */}
+                  <div className="flex items-center gap-2 md:flex-col">
+                    <div className="flex">
                       <button
-                        onClick={() => onEdit && onEdit(task)}
-                        className="p-1 text-gray-400 hover:text-gray-500 dark:hover:text-gray-300"
+                        onClick={() => onEdit(task)}
+                        className="p-1.5 rounded-md text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+                        title="Edit Task"
                       >
-                        <Edit className="h-5 w-5" />
+                        <Edit className="h-4 w-4" />
                       </button>
+                      <button
+                        onClick={() => handleDelete(task.id)}
+                        className="p-1.5 rounded-md text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+                        title="Delete Task"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                    
+                    <div>
                       {task.status === "todo" && (
                         <button
-                          onClick={() => handleStart(task.id)}
-                          className="p-1 text-blue-500 hover:text-blue-600"
+                          onClick={() => handleStatusChange(task.id, "inprogress")}
+                          className="text-xs px-2 py-1 rounded-md text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30"
                           title="Start Task"
                         >
                           Start
@@ -275,27 +479,39 @@ export default function TaskList({ refreshFlag, onEdit }) {
                       )}
                       {task.status === "inprogress" && (
                         <button
-                          onClick={() => handleFinish(task.id)}
-                          className="p-1 text-green-500 hover:text-green-600"
+                          onClick={() => handleStatusChange(task.id, "completed")}
+                          className="text-xs px-2 py-1 rounded-md text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30"
                           title="Mark as Completed"
                         >
-                          ✓
+                          Complete
                         </button>
                       )}
-                      <button
-                        onClick={() => handleDelete(task.id)}
-                        className="p-1 text-gray-400 hover:text-red-500"
-                      >
-                        <Trash2 className="h-5 w-5" />
-                      </button>
+                      {task.status === "completed" && (
+                        <button
+                          onClick={() => handleStatusChange(task.id, "todo")}
+                          className="text-xs px-2 py-1 rounded-md text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+                          title="Reopen Task"
+                        >
+                          Reopen
+                        </button>
+                      )}
+                      </div>
                     </div>
                   </div>
                 </li>
-              );
-            })}
-          </ul>
-        )}
+              ))}
+            </ul>
+          )}
       </div>
+      
+      {/* Loading overlay for subsequent data fetches */}
+      {loading && tasks.length > 0 && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-20 dark:bg-opacity-40 z-10">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-lg">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+        </div>
+      </div>
+      )}
     </div>
   );
 }

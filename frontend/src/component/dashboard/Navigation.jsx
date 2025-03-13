@@ -12,8 +12,8 @@ const NavItem = ({ to, children, icon }) => {
         flex items-center px-4 py-2 rounded-lg
         transition-all duration-200 ease-in-out
         ${isActive 
-          ? 'bg-blue-100 text-blue-700 dark:bg-white dark:text-white' 
-          : 'text-gray-600 hover:bg-indigo-50 hover:text-indigo-600 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white'
+          ? 'bg-blue-100 text-blue-700 dark:bg-blue-600 dark:text-white dark:hover:text-blue-200 ' 
+          : 'text-gray-600 hover:bg-indigo-50 hover:text-indigo-600 dark:hover:bg-gray-800 dark:hover:text-white'
         }
       `}
     >
@@ -81,6 +81,16 @@ const Navigation = () => {
         }
       >
         Reports
+      </NavItem>
+      <NavItem
+        to="/habit-tracker"
+        icon={
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+          </svg>
+        }
+      >
+        HabitTracker
       </NavItem>
     </nav>
   );

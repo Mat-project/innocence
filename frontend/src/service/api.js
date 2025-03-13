@@ -24,10 +24,22 @@ export const taskAPI = {
 };
 
 export const notificationAPI = {
-  getNotifications: () => api.get('/api/notifications/'),
-  markAsRead: (id) => api.patch(`/api/notifications/${id}/read/`, {}),
+  getNotifications: async () => {
+    return await api.get('/notifications/');
+  },
+  
+  markAsRead: async (id) => {
+    return await api.patch(`/notifications/${id}/read/`);
+  },
+  
+  createNotification: async (data) => {
+    return await api.post('/notifications/', data);
+  },
+  
+  deleteNotification: async (id) => {
+    return await api.delete(`/notifications/${id}/`);
+  }
 };
-
 export const fileConverterAPI = {
   convertFile: (formData) => 
     api.post('/api/convert/', formData,{ headers: { 'Content-Type': 'multipart/form-data' }, responseType: 'blob' }),

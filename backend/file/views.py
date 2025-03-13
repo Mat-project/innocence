@@ -70,11 +70,25 @@ def convert_file_view(request):
             with open(upload_path, "wb+") as destination:
                 for chunk in file.chunks():
                     destination.write(chunk)
-            # Define output filename (using conversion type’s ending part)
-            extension = conversion_type.split('_')[-1]
+            
+            # Define the correct extension mapping for each conversion type
+            ext_mapping = {
+                "image_to_pdf": "pdf",
+                "pdf_to_img": "png",          # or "jpeg" depending on desired output
+                "pdf_to_word": "docx",        # use docx instead of word
+                "html_to_pdf": "pdf",
+                "pdf_to_pptx": "pptx",
+                "word_to_pdf": "pdf"
+            }
+
+            # Get the proper extension based on conversion type
+            extension = ext_mapping.get(conversion_type)
+            if not extension:
+                return JsonResponse({"error": "Unsupported conversion type"}, status=400)
+
             output_filename = f"converted_{os.path.splitext(filename)[0]}.{extension}"
             output_path = os.path.join(RESULT_FOLDER, output_filename)
-            
+
             # Debug log conversion type
             print("Performing conversion:", conversion_type)
             # Perform conversion based on type
@@ -92,6 +106,7 @@ def convert_file_view(request):
                 convert_word_to_pdf(upload_path, output_path)
             else:
                 return JsonResponse({"error": "Invalid conversion type"}, status=400)
+
             # Return the converted file as a response
             response = FileResponse(open(output_path, "rb"), as_attachment=True, filename=output_filename)
             return response

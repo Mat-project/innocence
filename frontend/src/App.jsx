@@ -12,6 +12,7 @@ import LandingPage from './pages/landing/LandingPage';
 import AuthLayout from './component/layout/AuthLayout';
 import FileConverterPage from './pages/FileConvertor/FileConverterPage';
 import About from './component/LandingComponent/about';
+import HabitTracker from './pages/HabitTracker/HabitTracker';
 
 // Protected Route component
 const ProtectedRoute = ({ children }) => {
@@ -40,7 +41,6 @@ function App() {
           <Routes>
             {/* Public routes */}
             <Route path="/" element={<LandingPage />} />
-            <Route path="/about" element={<About />} />
             <Route path="/login" element={
               <AuthLayout>
                 <LoginForm />
@@ -59,6 +59,8 @@ function App() {
               <Route path="notifications" element={<NotificationsPage />} />
               <Route path="profile" element={<ProfilePage />} />
               <Route path="file-convertor" element={<FileConverterPage />} />
+{/*               <Route path="about" element={<About />} /> */}
+              <Route path="habit-tracker" element={<HabitTracker />} />
             </Route>
 
             {/* Catch-all route for 404 */}

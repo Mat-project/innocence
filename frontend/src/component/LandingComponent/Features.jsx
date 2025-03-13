@@ -77,7 +77,7 @@ export default function Features() {
   ]
 
   return (
-    <section className="py-20 w-full bg-gray-50 dark:bg-gray-900">
+    <section className="py-20 w-full bg-gray-50 dark:bg-gray-900 mb-3">
       <div className="max-w-7xl mx-auto px-4">
         <div className="text-center max-w-3xl mx-auto mb-16">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-gray-200 text-sm font-medium mb-4 hover:scale-105 transition-transform">
