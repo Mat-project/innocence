@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     "api",
     "task",
     "notification",
+    "code_editor",
 ]
 
 MIDDLEWARE = [
@@ -83,9 +84,9 @@ WSGI_APPLICATION = "backend.wsgi.application"
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'innocence',
+        'NAME': 'taskverse',
         'USER': 'postgres',
-        'PASSWORD': 'bangban4120D',
+        'PASSWORD': 'MADH@2006',
         'HOST': 'localhost',
         'PORT': '5432',
     }

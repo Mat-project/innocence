@@ -13,6 +13,11 @@ import AuthLayout from './component/layout/AuthLayout';
 import FileConverterPage from './pages/FileConvertor/FileConverterPage';
 import About from './component/LandingComponent/about';
 import HabitTracker from './pages/HabitTracker/HabitTracker';
+import PomodoroTimer from './pages/PomodoroTimer/PomodoroTimer';
+
+import CodeEditorPage from './pages/CodeEditor/CodeEditorPage'; 
+import CodeEditorFeature from './pages/CodeEditor/CodeEditorFeature';     
+
 
 // Protected Route component
 const ProtectedRoute = ({ children }) => {
@@ -61,6 +66,8 @@ function App() {
               <Route path="file-convertor" element={<FileConverterPage />} />
 {/*               <Route path="about" element={<About />} /> */}
               <Route path="habit-tracker" element={<HabitTracker />} />
+              <Route path="pomodoro-timer" element={<PomodoroTimer />} />
+              <Route path="/code-editor/*" element={<CodeEditorFeature />} />
             </Route>
 
             {/* Catch-all route for 404 */}
