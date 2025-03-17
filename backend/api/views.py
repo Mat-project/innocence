@@ -9,6 +9,12 @@ from rest_framework.generics import RetrieveUpdateAPIView
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from .serializers import ProfileSerializer
 from .models import Profile
+import subprocess
+import tempfile
+import os
+from django.http import JsonResponse
+from rest_framework.decorators import api_view
+import json
 
 User = get_user_model()
 
@@ -96,3 +102,53 @@ class ProfileDetailUpdateView(RetrieveUpdateAPIView):
     def get_object(self):
         # Return the profile for the current authenticated user.
         return self.request.user.profile
+
+@api_view(['POST'])
+def execute_python(request):
+    code = request.data.get('code', '')
+    user_input = request.data.get('input', '')
+    
+    # Create a temporary file for the Python code
+    with tempfile.NamedTemporaryFile(suffix='.py', delete=False) as temp_file:
+        temp_filename = temp_file.name
+        temp_file.write(code.encode('utf-8'))
+    
+    # Create a temporary file for the input
+    with tempfile.NamedTemporaryFile(suffix='.txt', delete=False) as input_file:
+        input_filename = input_file.name
+        input_file.write(user_input.encode('utf-8'))
+    
+    try:
+        # Execute the Python code with the input file
+        with open(input_filename, 'r') as input_stream:
+            result = subprocess.run(
+                ['python', temp_filename],
+                stdin=input_stream,
+                capture_output=True,
+                text=True,
+                timeout=5  # 5 second timeout
+            )
+        
+        # Get output and errors
+        output = result.stdout
+        error = result.stderr
+        
+        # Clean up temporary files
+        os.unlink(temp_filename)
+        os.unlink(input_filename)
+        
+        if error:
+            return Response({'output': f"Error:\n{error}"})
+        return Response({'output': output if output else "Code executed successfully with no output."})
+    except subprocess.TimeoutExpired:
+        # Clean up if timeout occurs
+        os.unlink(temp_filename)
+        os.unlink(input_filename)
+        return Response({'output': "Execution timed out. Your code took too long to run."})
+    except Exception as e:
+        # Handle any other errors
+        if os.path.exists(temp_filename):
+            os.unlink(temp_filename)
+        if os.path.exists(input_filename):
+            os.unlink(input_filename)
+        return Response({'output': f"Execution error: {str(e)}"})

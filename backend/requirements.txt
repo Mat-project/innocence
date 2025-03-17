@@ -30,10 +30,10 @@ drf-yasg>=1.21.7  # API documentation (Swagger)
 dj-rest-auth>=5.0.0  # Authentication management
 django-allauth>=0.44.0  # User authentication
 
-docx2txt==0.8
-python-docx==0.8.11
-reportlab==3.6.12
-pdfkit==1.0.0
-pymupdf==1.22.5      # provides the 'fitz' module
-python-pptx==0.6.21
-fpdf==1.7.2
+docx2txt
+python-docx
+reportlab
+pdfkit
+pymupdf      # provides the 'fitz' module
+python-pptx
+fpdf

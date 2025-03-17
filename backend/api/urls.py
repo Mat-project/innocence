@@ -6,7 +6,8 @@ from .views import (
     LogoutView,
     ProfileView,
     ForgotPasswordView,
-    ProfileDetailUpdateView
+    ProfileDetailUpdateView,
+    execute_python
 )
 
 urlpatterns = [
@@ -18,4 +19,5 @@ urlpatterns = [
     path('auth/profile/', ProfileView.as_view(), name='profile'),
     path('auth/forgot-password/', ForgotPasswordView.as_view(), name='forgot-password'),
     path("auth/profile-detail-update/", ProfileDetailUpdateView.as_view(), name="profile-detail-update"),
+    path('execute-python/', execute_python, name='execute_python'),
 ]
