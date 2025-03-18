@@ -1,85 +1,353 @@
-//// filepath: d:/project/innovsence/frontend/src/pages/FileConvertor/FileConvertor.jsx
-import React, { useState } from 'react';
-import { fileConverterAPI } from '../../service/api';
+import React, { useState, useRef } from "react";
+import axios from "axios";
+import { 
+  FileUp, 
+  Download, 
+  File, 
+  Image, 
+  FileText, 
+  FileSpreadsheet,
+  AlertCircle, 
+  Check, 
+  Loader, 
+  X
+} from "lucide-react";
 
-export default function FileConvertor() {
+const conversionOptions = [
+  {
+    id: "word_to_pdf",
+    title: "Word to PDF",
+    sourceType: "word",
+    sourceExt: ["docx"],
+    targetExt: "pdf",
+    icon: <FileText className="w-5 h-5 text-blue-500" />
+  },
+  {
+    id: "pdf_to_word",
+    title: "PDF to Word",
+    sourceType: "pdf",
+    sourceExt: ["pdf"],
+    targetExt: "docx",
+    icon: <File className="w-5 h-5 text-red-500" />
+  },
+  {
+    id: "image_to_pdf",
+    title: "Image to PDF",
+    sourceType: "image",
+    sourceExt: ["png", "jpg", "jpeg"],
+    targetExt: "pdf",
+    icon: <Image className="w-5 h-5 text-purple-500" />
+  },
+  {
+    id: "pdf_to_img",
+    title: "PDF to Images",
+    sourceType: "pdf",
+    sourceExt: ["pdf"],
+    targetExt: "zip/png",
+    icon: <Image className="w-5 h-5 text-green-500" />
+  },
+  {
+    id: "html_to_pdf",
+    title: "HTML to PDF",
+    sourceType: "html",
+    sourceExt: ["html", "htm"],
+    targetExt: "pdf",
+    icon: <FileText className="w-5 h-5 text-orange-500" />
+  },
+  {
+    id: "pdf_to_pptx",
+    title: "PDF to PowerPoint",
+    sourceType: "pdf",
+    sourceExt: ["pdf"],
+    targetExt: "pptx",
+    icon: <FileSpreadsheet className="w-5 h-5 text-yellow-500" />
+  },
+];
+
+export default function FileConverter() {
+  const [selectedConversion, setSelectedConversion] = useState(null);
   const [file, setFile] = useState(null);
-  const [fileType, setFileType] = useState("");
-  const [conversionType, setConversionType] = useState("");
-  const [downloadUrl, setDownloadUrl] = useState("");
+  const [status, setStatus] = useState("idle"); // idle, uploading, success, error
   const [error, setError] = useState("");
-
-  const handleFileChange = (e) => {
-    setFile(e.target.files[0]);
+  const [progress, setProgress] = useState(0);
+  
+  const fileInputRef = useRef(null);
+  
+  const handleConversionSelect = (conversion) => {
+    setSelectedConversion(conversion);
+    setFile(null);
+    setStatus("idle");
+    setError("");
   };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!file || !fileType || !conversionType) {
-      setError("Please provide a file, file type, and conversion type.");
+  
+  const handleFileChange = (e) => {
+    const selectedFile = e.target.files[0];
+    if (!selectedFile) return;
+    
+    // Validate file type
+    const fileExt = selectedFile.name.split('.').pop().toLowerCase();
+    if (!selectedConversion.sourceExt.includes(fileExt)) {
+      setError(`Invalid file type. Please select a ${selectedConversion.sourceExt.join(" or ")} file.`);
+      setFile(null);
       return;
     }
+    
+    setFile(selectedFile);
     setError("");
+    setStatus("idle");
+  };
+  
+  const handleConvert = async () => {
+    // Make sure we have a file and a selected conversion option
+    if (!file || !selectedConversion) {
+      setError("Please select a file and conversion option");
+      return;
+    }
+    
+    setStatus("uploading");
+    setProgress(0);
+    setError("");
+    
+    // Create form data
     const formData = new FormData();
     formData.append("file", file);
-    formData.append("file_type", fileType);
-    formData.append("conversion_type", conversionType);
-    
-    console.log("File:", file);
-    console.log("File Type:", fileType);
-    console.log("Conversion Type:", conversionType);
+    formData.append("file_type", selectedConversion.sourceType);
+    formData.append("conversion_type", selectedConversion.id);
     
     try {
-      const response = await fileConverterAPI.convertFile(formData);
+      // Use the full URL to your Django backend
+      const BACKEND_URL = "http://localhost:8000";
+      
+      const response = await axios.post(`${BACKEND_URL}/api/file/convert/`, formData, {
+        onUploadProgress: (progressEvent) => {
+          const percentCompleted = Math.round(
+            (progressEvent.loaded * 100) / progressEvent.total
+          );
+          setProgress(percentCompleted);
+        },
+        responseType: "blob",
+        headers: {
+          "Content-Type": "multipart/form-data"
+        }
+      });
+      
+      // Create a blob URL for downloading
       const url = window.URL.createObjectURL(new Blob([response.data]));
-      setDownloadUrl(url);
-    } catch (err) {
-      setError(err.response.data.error || "Conversion failed");
+      
+      // Create filename based on original filename
+      const filenameParts = file.name.split('.');
+      filenameParts.pop(); // Remove extension
+      const filename = `${filenameParts.join('.')}.${selectedConversion.targetExt.split('/')[0]}`;
+      
+      // Create download link
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      
+      setStatus("success");
+    } catch (error) {
+      console.error("Conversion error:", error);
+      setError("Conversion failed. Please try again later.");
+      setStatus("error");
+    } finally {
+      // Set status back to idle after a delay so user can see success/error message
+      setTimeout(() => {
+        if (status !== "error") {
+          setStatus("idle");
+        }
+      }, 3000);
+      setProgress(100);
     }
   };
-
+  
+  const triggerFileSelect = () => {
+    fileInputRef.current.click();
+  };
+  
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-xl font-bold mb-4">File Converter</h1>
-      {error && <div className="text-red-500 mb-4">{error}</div>}
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="block mb-1">File:</label>
-          <input type="file" onChange={handleFileChange} className="border px-2 py-1" />
-        </div>
-        <div>
-          <label className="block mb-1">File Type:</label>
-          <select value={fileType} onChange={(e) => setFileType(e.target.value)} className="border px-2 py-1">
-            <option value="">Select file type</option>
-            <option value="pdf">PDF</option>
-            <option value="image">Image</option>
-            <option value="html">HTML</option>
-            <option value="word">Word</option>
-          </select>
-        </div>
-        <div>
-          <label className="block mb-1">Conversion Type:</label>
-          <select value={conversionType} onChange={(e) => setConversionType(e.target.value)} className="border px-2 py-1">
-            <option value="">Select conversion</option>
-            <option value="image_to_pdf">Image to PDF</option>
-            <option value="pdf_to_img">PDF to Image</option>
-            <option value="pdf_to_word">PDF to Word</option>
-            <option value="html_to_pdf">HTML to PDF</option>
-            <option value="pdf_to_pptx">PDF to PPTX</option>
-            <option value="word_to_pdf">Word to PDF</option>
-          </select>
-        </div>
-        <button type="submit" className="bg-indigo-600 text-white px-4 py-2 rounded">
-          Convert
-        </button>
-      </form>
-      {downloadUrl && (
-        <div className="mt-4">
-          <a href={downloadUrl} download="converted_file" className="text-indigo-600 underline">
-            Download Converted File
-          </a>
+    <div className="w-full">
+      <div className="text-center mb-8">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+          File Converter
+        </h1>
+        <p className="text-gray-600 dark:text-gray-300">
+          Convert your files between different formats with ease
+        </p>
+      </div>
+      
+      {/* Conversion Options */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 mb-8">
+        {conversionOptions.map((option) => (
+          <div
+            key={option.id}
+            className={`p-4 border rounded-lg cursor-pointer transition-all ${
+              selectedConversion?.id === option.id
+                ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20 shadow-md"
+                : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
+            }`}
+            onClick={() => handleConversionSelect(option)}
+          >
+            <div className="flex items-center">
+              <div className="mr-3">{option.icon}</div>
+              <div>
+                <h3 className="font-medium text-gray-800 dark:text-white">
+                  {option.title}
+                </h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  {option.sourceExt.join(", ").toUpperCase()} → {option.targetExt.toUpperCase()}
+                </p>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+      
+      {/* File Upload Area */}
+      {selectedConversion && (
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
+          <div className="text-center mb-4">
+            <h2 className="text-lg font-medium text-gray-800 dark:text-white">
+              {selectedConversion.title}
+            </h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Select a {selectedConversion.sourceExt.join(" or ")} file to convert
+            </p>
+          </div>
+          
+          <input
+            type="file"
+            ref={fileInputRef}
+            className="hidden"
+            onChange={handleFileChange}
+            accept={selectedConversion.sourceExt.map(ext => `.${ext}`).join(",")}
+          />
+          
+          {!file ? (
+            <div
+              onClick={triggerFileSelect}
+              className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 text-center cursor-pointer hover:border-indigo-500 dark:hover:border-indigo-400 transition-colors"
+            >
+              <FileUp className="w-10 h-10 text-gray-400 dark:text-gray-500 mx-auto mb-3" />
+              <p className="text-gray-600 dark:text-gray-300 font-medium mb-1">
+                Click to select a file
+              </p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Supports {selectedConversion.sourceExt.join(", ")} files
+              </p>
+            </div>
+          ) : (
+            <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 transition-colors">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <File className="w-8 h-8 text-indigo-500 dark:text-indigo-400 mr-3" />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-gray-800 dark:text-white truncate">
+                      {file.name}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      {(file.size / 1024 / 1024).toFixed(2)} MB
+                    </p>
+                  </div>
+                </div>
+                
+                <button
+                  onClick={() => setFile(null)}
+                  className="p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              
+              {error && (
+                <div className="mt-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-3 rounded-md text-sm flex items-start">
+                  <AlertCircle className="w-5 h-5 mr-2 flex-shrink-0 mt-0.5" />
+                  <span>{error}</span>
+                </div>
+              )}
+              
+              {status === "uploading" && (
+                <div className="mt-4">
+                  <div className="h-1.5 w-full bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-indigo-500 rounded-full"
+                      style={{ width: `${progress}%` }}
+                    ></div>
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 text-center">
+                    {progress}% - Converting...
+                  </p>
+                </div>
+              )}
+              
+              {status === "success" && (
+                <div className="mt-3 bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 p-3 rounded-md text-sm flex items-center">
+                  <Check className="w-5 h-5 mr-2" />
+                  <span>Conversion complete!</span>
+                </div>
+              )}
+              
+              <div className="mt-4 flex justify-between">
+                <button
+                  onClick={triggerFileSelect}
+                  className="px-4 py-2 text-sm text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white transition-colors"
+                >
+                  Change file
+                </button>
+                
+                <button
+                  onClick={handleConvert}
+                  disabled={status === "uploading"}
+                  className={`px-4 py-2 rounded-md text-white text-sm flex items-center transition-all ${
+                    status === "uploading" 
+                      ? "bg-indigo-400 dark:bg-indigo-600/50 cursor-not-allowed" 
+                      : "bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600"
+                  }`}
+                >
+                  {status === "uploading" ? (
+                    <>
+                      <Loader className="w-4 h-4 mr-2 animate-spin" />
+                      Converting...
+                    </>
+                  ) : (
+                    <>
+                      <Download className="w-4 h-4 mr-2" />
+                      Convert to {selectedConversion.targetExt.toUpperCase()}
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
+      
+      {/* Additional Information */}
+      <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4 text-sm transition-colors">
+        <h3 className="font-medium text-gray-800 dark:text-white mb-2">
+          About File Conversion
+        </h3>
+        <ul className="space-y-2 text-gray-600 dark:text-gray-300">
+          <li className="flex items-start">
+            <Check className="w-4 h-4 mr-2 text-green-500 mt-0.5" />
+            <span>All conversions happen securely on our servers.</span>
+          </li>
+          <li className="flex items-start">
+            <Check className="w-4 h-4 mr-2 text-green-500 mt-0.5" />
+            <span>Files are automatically deleted after processing.</span>
+          </li>
+          <li className="flex items-start">
+            <Check className="w-4 h-4 mr-2 text-green-500 mt-0.5" />
+            <span>Multi-page documents are supported with ZIP downloads.</span>
+          </li>
+          <li className="flex items-start">
+            <Check className="w-4 h-4 mr-2 text-green-500 mt-0.5" />
+            <span>Maximum file size: 50 MB</span>
+          </li>
+        </ul>
+      </div>
     </div>
   );
 }

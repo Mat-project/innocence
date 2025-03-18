@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Search, AlertCircle, Circle, ArrowUpCircle, Trash2, Edit, Tag, Calendar, Check,
-  Clock, User, Filter, ChevronDown, X
+  Clock, User, Filter, ChevronDown, X, ChevronUp
 } from 'lucide-react';
 import { taskAPI } from '../../service/api';
 import { format, isValid, parseISO, isToday, addDays, isWithinInterval } from 'date-fns';
@@ -12,6 +12,7 @@ export default function TaskList({ refreshFlag, onEdit, onTaskUpdated, searchQue
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showFilters, setShowFilters] = useState(false);
+  const [expandedTaskId, setExpandedTaskId] = useState(null);
 
   // Local filter states - synchronized with parent props
   const [filters, setFilters] = useState({
@@ -225,6 +226,10 @@ export default function TaskList({ refreshFlag, onEdit, onTaskUpdated, searchQue
     });
   };
 
+  const toggleTaskDetails = (taskId) => {
+    setExpandedTaskId(expandedTaskId === taskId ? null : taskId);
+  };
+
   if (loading && tasks.length === 0) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -242,7 +247,7 @@ export default function TaskList({ refreshFlag, onEdit, onTaskUpdated, searchQue
             <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Filters</h3>
             <button
               onClick={() => setShowFilters(!showFilters)} 
-              className="flex items-center text-xs px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
+              className="flex items-center text-sm px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
             >
               <Filter size={14} className="mr-1" />
               {showFilters ? 'Hide Filters' : 'Show Filters'}
@@ -276,7 +281,7 @@ export default function TaskList({ refreshFlag, onEdit, onTaskUpdated, searchQue
                 id="status-filter"
                 value={filters.status}
                 onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
-                className="w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
+                className="w-full px-3 py-1.5 text-xs border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
               >
                 <option value="all">All Status</option>
                 <option value="todo">To Do</option>
@@ -293,7 +298,7 @@ export default function TaskList({ refreshFlag, onEdit, onTaskUpdated, searchQue
                 id="priority-filter"
                 value={filters.priority}
                 onChange={(e) => setFilters(prev => ({ ...prev, priority: e.target.value }))}
-                className="w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
+                className="w-full px-3 py-1.5 text-xs border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
               >
                 <option value="all">All Priorities</option>
                 <option value="low">Low</option>
@@ -310,7 +315,7 @@ export default function TaskList({ refreshFlag, onEdit, onTaskUpdated, searchQue
                 id="category-filter"
                 value={filters.category}
                 onChange={(e) => setFilters(prev => ({ ...prev, category: e.target.value }))}
-                className="w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
+                className="w-full px-3 py-1.5 text-xs border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
               >
                 <option value="all">All Categories</option>
                 {categories.map((category, index) => (
@@ -327,7 +332,7 @@ export default function TaskList({ refreshFlag, onEdit, onTaskUpdated, searchQue
                 id="date-filter"
                 value={filters.dateRange}
                 onChange={(e) => setFilters(prev => ({ ...prev, dateRange: e.target.value }))}
-                className="w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
+                className="w-full px-3 py-1.5 text-xs border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
                         >
                 <option value="all">All Dates</option>
                 <option value="today">Due Today</option>
@@ -374,12 +379,18 @@ export default function TaskList({ refreshFlag, onEdit, onTaskUpdated, searchQue
         ) : (
           <ul className="divide-y divide-gray-200 dark:divide-gray-700">
             {filteredTasks.map(task => (
-              <li key={task.id} className={`p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors ${
-                task.status === 'completed' ? 'bg-gray-50/50 dark:bg-gray-800/50' : ''
-              }`}>
-                <div className="flex flex-col md:flex-row md:items-start gap-4">
+              <li 
+                key={task.id} 
+                className={`p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors ${
+                  task.status === 'completed' ? 'bg-gray-50/50 dark:bg-gray-800/50' : ''
+                } ${expandedTaskId === task.id ? 'bg-gray-50 dark:bg-gray-700/30' : ''}`}
+              >
+                <div 
+                  className="flex flex-col md:flex-row md:items-start gap-4 cursor-pointer"
+                  onClick={() => toggleTaskDetails(task.id)}
+                >
                   {/* Task status indicator */}
-                  <div className="flex-shrink-0">
+                  <div className="flex-shrink-0" onClick={e => e.stopPropagation()}>
                     <div className={`h-8 w-8 rounded-full flex items-center justify-center ${
                       task.status === 'completed' 
                         ? 'bg-green-100 dark:bg-green-900/40 text-green-600 dark:text-green-400' 
@@ -388,10 +399,10 @@ export default function TaskList({ refreshFlag, onEdit, onTaskUpdated, searchQue
                         : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
                     }`}>
                       {statusIcons[task.status]}
-                        </div>
-                      </div>
+                    </div>
+                  </div>
                       
-                  {/* Task content */}
+                  {/* Task content area - replace existing description rendering */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center flex-wrap gap-2">
                       <h3 className={`text-base font-medium break-words ${
@@ -406,18 +417,46 @@ export default function TaskList({ refreshFlag, onEdit, onTaskUpdated, searchQue
                       </span>
                     </div>
                     
-                        {task.description && (
-                      <p className={`mt-1 text-sm break-words ${
-                        task.status === 'completed'
-                          ? 'text-gray-400 dark:text-gray-500' 
-                          : 'text-gray-500 dark:text-gray-400'
-                      }`}>
-                        {task.description}
-                      </p>
-                        )}
+                    {/* Condensed description preview - always shown */}
+                    {task.description && (
+                      <div className="mt-1.5">
+                        <p className={`text-sm break-words relative ${
+                          task.status === 'completed'
+                            ? 'text-gray-400 dark:text-gray-500' 
+                            : 'text-gray-500 dark:text-gray-400'
+                        }`}>
+                          {task.description.length > 100 && expandedTaskId !== task.id
+                            ? `${task.description.substring(0, 100)}...`
+                            : expandedTaskId !== task.id && task.description}
+                        </p>
                         
+                        {/* Show more/less button for longer descriptions */}
+                        {task.description.length > 100 && (
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleTaskDetails(task.id);
+                            }}
+                            className="mt-1 inline-flex items-center text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors rounded-md px-2 py-1 hover:bg-indigo-50 dark:hover:bg-indigo-900/30"
+                          >
+                            {expandedTaskId === task.id ? (
+                              <>
+                                <ChevronUp className="h-3.5 w-3.5 mr-1" />
+                                Show less
+                              </>
+                            ) : (
+                              <>
+                                <ChevronDown className="h-3.5 w-3.5 mr-1" />
+                                Show more
+                              </>
+                            )}
+                          </button>
+                        )}
+                      </div>
+                    )}
+
                     <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-                          {task.due_date && (
+                      {task.due_date && (
                         <div className={`flex items-center px-2 py-0.5 rounded-md ${
                           task.status !== 'completed' && isOverdue(task.due_date) 
                             ? 'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400' 
@@ -428,38 +467,44 @@ export default function TaskList({ refreshFlag, onEdit, onTaskUpdated, searchQue
                             {formatDate(task.due_date)}
                             {task.status !== 'completed' && isOverdue(task.due_date) && ' (Overdue)'}
                           </span>
-                            </div>
-                          )}
+                        </div>
+                      )}
                           
-                          {task.category && (
+                      {task.category && (
                         <div className="flex items-center px-2 py-0.5 rounded-md bg-gray-100 dark:bg-gray-700">
                           <Tag className="h-3.5 w-3.5 mr-1" />
-                              {task.category}
-                            </div>
-                          )}
+                          {task.category}
+                        </div>
+                      )}
                           
-                          {/* Assigned to */}
-                          {task.assigned_to && (
+                      {/* Assigned to */}
+                      {task.assigned_to && (
                         <div className="flex items-center px-2 py-0.5 rounded-md bg-gray-100 dark:bg-gray-700">
                           <User className="h-3.5 w-3.5 mr-1" />
-                              {task.assigned_to}
-                            </div>
-                          )}
+                          {task.assigned_to}
                         </div>
-                      </div>
+                      )}
+                    </div>
+                  </div>
                       
                   {/* Action buttons */}
-                  <div className="flex items-center gap-2 md:flex-col">
+                  <div className="flex items-center gap-2 md:flex-col" onClick={e => e.stopPropagation()}>
                     <div className="flex">
                       <button
-                        onClick={() => onEdit(task)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onEdit(task);
+                        }}
                         className="p-1.5 rounded-md text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-gray-100 dark:hover:bg-gray-700"
                         title="Edit Task"
                       >
                         <Edit className="h-4 w-4" />
                       </button>
                       <button
-                        onClick={() => handleDelete(task.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(task.id);
+                        }}
                         className="p-1.5 rounded-md text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700"
                         title="Delete Task"
                       >
@@ -470,8 +515,11 @@ export default function TaskList({ refreshFlag, onEdit, onTaskUpdated, searchQue
                     <div>
                       {task.status === "todo" && (
                         <button
-                          onClick={() => handleStatusChange(task.id, "inprogress")}
-                          className="text-xs px-2 py-1 rounded-md text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleStatusChange(task.id, "inprogress");
+                          }}
+                          className="text-xs md:text-sm lg:text-sm px-2 py-1 rounded-md text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30"
                           title="Start Task"
                         >
                           Start
@@ -479,8 +527,11 @@ export default function TaskList({ refreshFlag, onEdit, onTaskUpdated, searchQue
                       )}
                       {task.status === "inprogress" && (
                         <button
-                          onClick={() => handleStatusChange(task.id, "completed")}
-                          className="text-xs px-2 py-1 rounded-md text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleStatusChange(task.id, "completed");
+                          }}
+                          className="text-xs md:text-sm lg:text-sm px-2 py-1 rounded-md text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30"
                           title="Mark as Completed"
                         >
                           Complete
@@ -488,20 +539,72 @@ export default function TaskList({ refreshFlag, onEdit, onTaskUpdated, searchQue
                       )}
                       {task.status === "completed" && (
                         <button
-                          onClick={() => handleStatusChange(task.id, "todo")}
-                          className="text-xs px-2 py-1 rounded-md text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleStatusChange(task.id, "todo");
+                          }}
+                          className="text-xs md:text-sm lg:text-sm px-2 py-1 rounded-md text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
                           title="Reopen Task"
                         >
                           Reopen
                         </button>
                       )}
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Replace the existing expanded task details section with this enhanced version */}
+                {expandedTaskId === task.id && task.description && (
+                  <div className="mt-4 overflow-hidden transition-all duration-300 ease-in-out animate-fadeIn">
+                    <div className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-100 dark:border-gray-700 shadow-sm">
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="text-sm font-medium text-gray-900 dark:text-white flex items-center">
+                          <AlertCircle className="h-4 w-4 mr-2 text-indigo-500 dark:text-indigo-400" />
+                          Task Description
+                        </h4>
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleTaskDetails(null);
+                          }}
+                          className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                      
+                      <div className="prose prose-sm dark:prose-invert max-w-none">
+                        <p className="whitespace-pre-wrap text-gray-700 dark:text-gray-300 text-sm leading-relaxed">
+                          {task.description}
+                        </p>
+                      </div>
+                      
+                      <div className="mt-4 pt-3 border-t border-gray-100 dark:border-gray-700 flex justify-between items-center">
+                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                          {task.updated_at && (
+                            <div className="flex items-center">
+                              <Clock className="h-3 w-3 mr-1" />
+                              Updated: {format(parseISO(task.updated_at), 'MMM d, yyyy')}
+                            </div>
+                          )}
+                        </div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onEdit(task);
+                          }}
+                          className="text-xs px-3 py-1 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-md hover:bg-indigo-100 dark:hover:bg-indigo-800/40"
+                        >
+                          Edit Task
+                        </button>
                       </div>
                     </div>
                   </div>
-                </li>
-              ))}
-            </ul>
-          )}
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
       
       {/* Loading overlay for subsequent data fetches */}
@@ -510,7 +613,7 @@ export default function TaskList({ refreshFlag, onEdit, onTaskUpdated, searchQue
           <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-lg">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
         </div>
-      </div>
+</div>
       )}
     </div>
   );

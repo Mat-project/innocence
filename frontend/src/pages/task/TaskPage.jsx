@@ -254,9 +254,9 @@ export default function TaskPage() {
           <div className="flex flex-col space-y-3 px-4 py-3">
             {/* Top row - Title and Task Button */}
             <div className="flex items-center justify-between">
-              <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">
+              <div className="text-xl font-bold text-gray-900 dark:text-gray-100 md:text-2xl lg:text-3xl">
                 Task Management
-              </h1>
+              </div>
               
               <div className="flex items-center gap-2">
     {/*             {hasDueTasks && (
@@ -278,7 +278,7 @@ export default function TaskPage() {
                 
                 <button
                   onClick={handleNewTask}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-black bg-indigo-600 dark:text-white hover:bg-indigo-700 transition-colors text-sm font-medium shadow-sm"
+                className="inline-flex sm:text-xs md:text-sm lg:text-lg items-center gap-1.5 px-3 py-1.5 rounded-md text-black bg-indigo-600 dark:text-white hover:bg-indigo-700 transition-colors text-sm font-medium shadow-sm"
                 >
                   <Plus className="w-4 h-4" />
                   <span>New Task</span>

@@ -22,7 +22,7 @@ urlpatterns = [
     path('api/', include('api.urls')),
     path('api/tasks/', include('task.urls')),  # Include task routes here
     path('api/notifications/', include('notification.urls')),  # added notifications
-    path('api/', include('file.urls')),  # Include file app URLs under the "api/" prefix
+    path('api/file/', include('file.urls')),  # Include file app URLs under the "api/" prefix
     path('api/', include('code_editor.urls')),  # Include code_editor app URLs under the "api/" prefix
    
 ]

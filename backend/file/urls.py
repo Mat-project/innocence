@@ -1,6 +1,7 @@
 from django.urls import path
-from .views import convert_file_view
+from . import views
 
 urlpatterns = [
-    path("convert/", convert_file_view, name="convert_file"),
+    path('test/', views.test_view, name='test_view'),
+    path('convert/', views.convert_file_view, name='convert_file'),
 ]

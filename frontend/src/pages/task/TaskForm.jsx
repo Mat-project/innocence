@@ -1,164 +1,163 @@
-import React, { useState, useEffect } from 'react';
-import { AlertCircle } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
 import { taskAPI } from '../../service/api';
+import DatePicker from 'react-datepicker';
+import moment from 'moment';
+import 'react-datepicker/dist/react-datepicker.css';
 
 export default function TaskForm({ onTaskCreated, initialData = {}, onCancelEdit }) {
-  const isEditMode = !!initialData.id;
   const [formData, setFormData] = useState({
-    title: initialData.title || '',
-    description: initialData.description || '',
-    status: initialData.status || 'todo',
-    priority: initialData.priority || 'medium',
-    due_date: initialData.due_date || '',
-    category: initialData.category || '',
-    assignedTo: initialData.assigned_to || '',
+    title: initialData.title || "",
+    description: initialData.description || "",
+    status: initialData.status || "todo",
+    priority: initialData.priority || "medium",
+    due_date: initialData.due_date ? new Date(initialData.due_date) : new Date(),
+    category: initialData.category || "",
+    assigned_to: initialData.assigned_to || "",
   });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
+  const [showSuccessAlert, setShowSuccessAlert] = useState(false);
+  const isEditing = Boolean(initialData.id);
 
-  // Update form data when editing
-  useEffect(() => {
-    setFormData({
-      title: initialData.title || '',
-      description: initialData.description || '',
-      status: initialData.status || 'todo',
-      priority: initialData.priority || 'medium',
-      due_date: initialData.due_date || '',
-      category: initialData.category || '',
-      assignedTo: initialData.assigned_to || '',
-    });
-  }, [initialData]);
+  const formRef = useRef(null);
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleDateChange = (date) => {
+    setFormData((prev) => ({ ...prev, due_date: date }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
-    
-    if (formData.title.trim() === '') {
-      setError('Title is required.');
-      return;
-    }
-
     setLoading(true);
+    setError("");
+
     try {
       const payload = {
         ...formData,
-        assigned_to: formData.assignedTo,
+        due_date: moment(formData.due_date).format("YYYY-MM-DD"),
       };
-      delete payload.assignedTo;
 
       let response;
-      if (isEditMode) {
+      if (isEditing) {
         response = await taskAPI.updateTask(initialData.id, payload);
       } else {
         response = await taskAPI.createTask(payload);
       }
-      onTaskCreated(response.data);
-      
-      if (!isEditMode) {
+
+      setShowSuccessAlert(true);
+      setTimeout(() => setShowSuccessAlert(false), 3000);
+
+      if (onTaskCreated) {
+        onTaskCreated(response.data);
+      }
+
+      if (!isEditing) {
         setFormData({
-          title: '',
-          description: '',
-          status: 'todo',
-          priority: 'medium',
-          due_date: '',
-          category: '',
-          assignedTo: '',
+          title: "",
+          description: "",
+          status: "todo",
+          priority: "medium",
+          due_date: new Date(),
+          category: "",
+          assigned_to: "",
         });
-      } else if (onCancelEdit) {
-        onCancelEdit();
       }
     } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to create/update task');
+      console.error("Error creating task:", err);
+      setError(err.response?.data?.message || "Failed to save task. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
-  const priorityOptions = [
-    { value: 'low', label: 'Low', class: 'text-green-700 dark:text-green-400 bg-green-100 dark:bg-green-900/40' },
-    { value: 'medium', label: 'Medium', class: 'text-yellow-700 dark:text-yellow-400 bg-yellow-100 dark:bg-yellow-900/40' },
-    { value: 'high', label: 'High', class: 'text-red-700 dark:text-red-400 bg-red-100 dark:bg-red-900/40' },
-  ];
-
-  const statusOptions = [
-    { value: 'todo', label: 'To Do', class: 'text-gray-700 dark:text-gray-300' },
-    { value: 'inprogress', label: 'In Progress', class: 'text-blue-700 dark:text-blue-400' },
-    { value: 'completed', label: 'Completed', class: 'text-green-700 dark:text-green-400' },
-  ];
+  useEffect(() => {
+    if (formRef.current) {
+      formRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, []);
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
-      {error && (
-        <div className="p-3 rounded-lg bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800/60 text-red-700 dark:text-red-400 text-sm flex items-center">
-          <AlertCircle className="h-4 w-4 mr-2 flex-shrink-0" />
-          <span>{error}</span>
-        </div>
-      )}
+    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm rounded-lg"
+         ref={formRef}>
+      <div className="bg-gray-50 dark:bg-gray-800 px-4 py-3 sm:px-6 border-b border-gray-200 dark:border-gray-700">
+        <h3 className="text-base sm:text-lg font-medium text-gray-900 dark:text-white">
+          {isEditing ? "Edit Task" : "Create New Task"}
+        </h3>
+      </div>
 
-      <div className="space-y-5">
-        {/* Title */}
+      <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+        {/* Success Alert */}
+        {showSuccessAlert && (
+          <div className="bg-green-50 dark:bg-green-900/30 p-3 rounded-md border border-green-200 dark:border-green-800 mb-4">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
+              </div>
+              <div className="ml-3">
+                <p className="text-xs sm:text-sm font-medium text-green-800 dark:text-green-200">
+                  {isEditing ? "Task updated successfully!" : "Task created successfully!"}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Error Alert */}
+        {error && (
+          <div className="bg-red-50 dark:bg-red-900/30 p-3 rounded-md border border-red-200 dark:border-red-800 mb-4">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
+              </div>
+              <div className="ml-3">
+                <p className="text-xs sm:text-sm font-medium text-red-800 dark:text-red-200">{error}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Title Field */}
         <div>
-          <label htmlFor="title" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Title <span className="text-red-500">*</span>
+          <label htmlFor="title" className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            Task Title <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
             id="title"
             name="title"
+            required
             value={formData.title}
             onChange={handleChange}
-            className="w-full px-3 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+            className="w-full px-3 py-2 sm:py-2.5 text-xs sm:text-sm border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
             placeholder="Enter task title"
-            required
           />
         </div>
 
-        {/* Description */}
+        {/* Description Field */}
         <div>
-          <label htmlFor="description" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <label htmlFor="description" className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             Description
           </label>
           <textarea
             id="description"
             name="description"
+            rows="3"
             value={formData.description}
             onChange={handleChange}
-            rows="3"
-            className="w-full px-3 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-            placeholder="Describe the task..."
-          />
+            className="w-full px-3 py-2 sm:py-2.5 text-xs sm:text-sm border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+            placeholder="Enter task description"
+          ></textarea>
         </div>
 
-        {/* Priority and Status */}
+        {/* Two Column Layout for Status and Priority */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label htmlFor="priority" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Priority
-            </label>
-            <select
-              id="priority"
-              name="priority"
-              value={formData.priority}
-              onChange={handleChange}
-              className="w-full px-3 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-            >
-              {priorityOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
-          
-          <div>
-            <label htmlFor="status" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label htmlFor="status" className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Status
             </label>
             <select
@@ -166,40 +165,51 @@ export default function TaskForm({ onTaskCreated, initialData = {}, onCancelEdit
               name="status"
               value={formData.status}
               onChange={handleChange}
-              className="w-full px-3 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+              className="w-full px-3 py-2 sm:py-2.5 text-xs sm:text-sm border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
             >
-              {statusOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
+              <option value="todo">To Do</option>
+              <option value="inprogress">In Progress</option>
+              <option value="completed">Completed</option>
             </select>
-            {isEditMode && initialData.status === 'completed' && (
-              <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">
-                Editing a finished task will reopen it.
-              </p>
-            )}
+          </div>
+
+          <div>
+            <label htmlFor="priority" className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Priority
+            </label>
+            <select
+              id="priority"
+              name="priority"
+              value={formData.priority}
+              onChange={handleChange}
+              className="w-full px-3 py-2 sm:py-2.5 text-xs sm:text-sm border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+            >
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+            </select>
           </div>
         </div>
-        
-        {/* Due Date and Category */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label htmlFor="due_date" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Due Date
-            </label>
-            <input
-              type="datetime-local"
-              id="due_date"
-              name="due_date"
-              value={formData.due_date}
-              onChange={handleChange}
-              className="w-full px-3 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+
+        {/* Due Date */}
+        <div>
+          <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            Due Date
+          </label>
+          <div className="date-picker-container">
+            <DatePicker
+              selected={formData.due_date}
+              onChange={handleDateChange}
+              dateFormat="MMM d, yyyy"
+              className="w-full px-3 py-2 sm:py-2.5 text-xs sm:text-sm border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
             />
           </div>
-          
+        </div>
+
+        {/* Two Column Layout for Category and Assignee */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label htmlFor="category" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label htmlFor="category" className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Category
             </label>
             <input
@@ -208,51 +218,77 @@ export default function TaskForm({ onTaskCreated, initialData = {}, onCancelEdit
               name="category"
               value={formData.category}
               onChange={handleChange}
-              className="w-full px-3 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-              placeholder="e.g., Development, Design"
+              className="w-full px-3 py-2 sm:py-2.5 text-xs sm:text-sm border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+              placeholder="e.g. Work, Personal"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="assigned_to" className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Assigned To
+            </label>
+            <input
+              type="text"
+              id="assigned_to"
+              name="assigned_to"
+              value={formData.assigned_to}
+              onChange={handleChange}
+              className="w-full px-3 py-2 sm:py-2.5 text-xs sm:text-sm border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+              placeholder="Enter assignee's name"
             />
           </div>
         </div>
 
-        {/* Assigned To */}
-        <div>
-          <label htmlFor="assignedTo" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Assigned To
-          </label>
-          <input
-            type="text"
-            id="assignedTo"
-            name="assignedTo"
-            value={formData.assignedTo}
-            onChange={handleChange}
-            className="w-full px-3 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-            placeholder="Enter name or username"
-          />
-        </div>
-      </div>
-
-      <div className="flex items-center justify-end gap-3 pt-4">
-        {isEditMode && (
+        {/* Form Actions */}
+        <div className="flex justify-end space-x-3 pt-3 sm:pt-4 border-t sm:text-sm text-lg border-gray-200 dark:border-gray-700">
+          {onCancelEdit && (
+            <button
+              type="button"
+              onClick={onCancelEdit}
+              className="px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 rounded-md shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+            >
+              Cancel
+            </button>
+          )}
           <button
-            type="button"
-            onClick={onCancelEdit}
-            className="px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+            type="submit"
+            disabled={loading}
+            className={`px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm bg-indigo-600 hover:bg-indigo-700 text-black dark:text-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 flex items-center ${
+              loading ? "opacity-75 cursor-not-allowed" : ""
+            }`}
           >
-            Cancel
+            {loading && <Loader2 className="animate-spin -ml-1 mr-2 h-4 w-4" />}
+            {isEditing ? "Update Task" : "Create Task"}
           </button>
-        )}
-        <button
-          type="submit"
-          disabled={loading}
-          className={`px-4 py-2 rounded-md font-medium bg-indigo-600 text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 shadow-sm transition-colors ${
-            loading ? 'opacity-75 cursor-not-allowed' : ''
-          }`}
-        >
-          {loading 
-            ? (isEditMode ? 'Saving...' : 'Creating...') 
-            : (isEditMode ? 'Save Changes' : 'Create Task')}
-        </button>
-      </div>
-    </form>
+        </div>
+      </form>
+      
+      {/* Add custom styles for date picker to work well on mobile */}
+      <style jsx global>{`
+        /* Styles for date picker on small screens */
+        @media (max-width: 640px) {
+          .react-datepicker {
+            font-size: 0.8rem !important;
+          }
+          .react-datepicker__header {
+            padding-top: 6px !important;
+          }
+          .react-datepicker__day, 
+          .react-datepicker__day-name {
+            width: 1.6rem !important;
+            line-height: 1.6rem !important;
+            margin: 0.1rem !important;
+          }
+          .react-datepicker__current-month {
+            font-size: 0.9rem !important;
+          }
+          .date-picker-container .react-datepicker-wrapper,
+          .date-picker-container .react-datepicker__input-container {
+            display: block;
+            width: 100%;
+          }
+        }
+      `}</style>
+    </div>
   );
 }

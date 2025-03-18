@@ -43,7 +43,8 @@ INSTALLED_APPS = [
     "api",
     "task",
     "notification",
-    "code_editor",
+    'file.apps.FileConfig',
+    'code_editor',
 ]
 
 MIDDLEWARE = [
@@ -84,9 +85,9 @@ WSGI_APPLICATION = "backend.wsgi.application"
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'taskverse',
+        'NAME': 'innocence',
         'USER': 'postgres',
-        'PASSWORD': 'MADH@2006',
+        'PASSWORD': 'bangban4120D',
         'HOST': 'localhost',
         'PORT': '5432',
     }
@@ -151,7 +152,8 @@ SIMPLE_JWT = {
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
-    "http://localhost:5174",
+#     "http://localhost:5174",
+    "http://localhost:5175",
 ]
 
 # Media files settings
