@@ -4,8 +4,6 @@ import Editor from '@monaco-editor/react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axios from '../../service/axios';
 
-
-
 const CodeEditorPage = () => {
   const [code, setCode] = useState('// Write your code here');
   const [language, setLanguage] = useState('javascript');
@@ -15,11 +13,11 @@ const CodeEditorPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [output, setOutput] = useState('');
   const [isRunning, setIsRunning] = useState(false);
+  const [userInput, setUserInput] = useState('');
   const { fileId } = useParams();
   const navigate = useNavigate();
   const outputRef = useRef(null);
   
-  // Supported languages
   const languages = [
     { value: 'javascript', label: 'JavaScript', extension: 'js' },
     { value: 'typescript', label: 'TypeScript', extension: 'ts' },
@@ -30,7 +28,6 @@ const CodeEditorPage = () => {
     { value: 'csharp', label: 'C#', extension: 'cs' }
   ];
   
-  // Available themes
   const themes = [
     { value: 'vs', label: 'Light' },
     { value: 'vs-dark', label: 'Dark' },
@@ -67,7 +64,6 @@ const CodeEditorPage = () => {
     const newLang = e.target.value;
     setLanguage(newLang);
     
-    // Update file extension based on language
     const selectedLang = languages.find(lang => lang.value === newLang);
     if (selectedLang) {
       const nameWithoutExt = fileName.split('.')[0];
@@ -87,20 +83,17 @@ const CodeEditorPage = () => {
     setIsSaving(true);
     try {
       if (fileId) {
-        // Update existing file
         await axios.put(`/api/code-files/${fileId}/`, {
           name: fileName,
           content: code,
           language: language
         });
       } else {
-        // Create new file
         const response = await axios.post('/api/code-files/', {
           name: fileName,
           content: code,
           language: language
         });
-        // Navigate to the edit page for the new file
         navigate(`/code-editor/${response.data.id}`);
       }
     } catch (error) {
@@ -132,11 +125,9 @@ const CodeEditorPage = () => {
     
     setTimeout(() => {
       try {
-        // Create a safe console object to capture log outputs
         const originalConsole = window.console;
         let outputText = '';
         
-        // Override console methods to capture output
         window.console = {
           log: (...args) => {
             const logOutput = args.map(arg => 
@@ -168,19 +159,13 @@ const CodeEditorPage = () => {
           }
         };
         
-        // Execute the code
-        // Note: This is using eval which has security implications
-        // For a production app, consider using a more secure approach
-        // like iframe sandboxing or a server-side execution environment
         const result = eval(code);
         
-        // Add the result to the output if it's not undefined
         if (result !== undefined) {
           outputText += 'Result: ' + (typeof result === 'object' ? 
             JSON.stringify(result, null, 2) : String(result));
         }
         
-        // Restore the original console
         window.console = originalConsole;
         setOutput(outputText || 'Code executed successfully with no output.');
       } catch (error) {
@@ -191,20 +176,58 @@ const CodeEditorPage = () => {
     }, 100);
   };
   
-  // Execute code based on language
-  const runCode = () => {
-    if (language === 'javascript') {
-      executeJavaScript();
-    } else {
-      setOutput(`Running ${language} code is not supported in the browser. Consider implementing a backend service for ${language} execution.`);
+  const executePython = async () => {
+    try {
+      const response = await axios.post('/api/code-files/execute/', {
+        code,
+        language: 'python',
+        input: userInput
+      });
+      
+      if (response.data.error === true) {
+        setOutput(response.data.output);
+      } else {
+        setOutput(response.data.output);
+      }
+    } catch (error) {
+      console.error('Error executing Python code:', error);
+      setOutput(`Error: ${error.response?.data?.error || error.message}`);
     }
   };
 
-  
+  const executeCode = async () => {
+    setIsRunning(true);
+    setOutput('');
+    
+    try {
+      if (language === 'javascript') {
+        executeJavaScript();
+      } else if (language === 'python') {
+        await executePython();
+      } else {
+        setOutput(`Language ${language} execution is not supported yet.`);
+      }
+    } catch (error) {
+      setOutput(`Error: ${error.message}`);
+    } finally {
+      setIsRunning(false);
+    }
+  };
+
+  const handleDownload = () => {
+    const blob = new Blob([code], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
   
   return (
     <div className="flex flex-col h-screen bg-gray-100 dark:bg-gray-900">
-      {/* Editor Header */}
       <div className="flex flex-wrap items-center justify-between p-4 bg-white dark:bg-gray-800 shadow">
         <div className="flex items-center space-x-4 mb-2 md:mb-0">
           <input
@@ -253,10 +276,19 @@ const CodeEditorPage = () => {
           >
             {isSaving ? 'Saving...' : 'Save'}
           </button>
+          <button
+            onClick={handleDownload}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-2 rounded flex items-center"
+            title="Download code"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
+            </svg>
+            Download
+          </button>
         </div>
       </div>
       
-      {/* Monaco Editor */}
       <div className="flex-grow">
         <Editor
           height="100%"
@@ -277,32 +309,11 @@ const CodeEditorPage = () => {
           }}
         />
       </div>
-      <div className="flex-grow">
-        <Editor
-          height="60%"  // Adjusted to make room for output panel
-          defaultLanguage="javascript"
-          language={language}
-          value={code}
-          theme={theme}
-          onChange={handleEditorChange}
-          options={{
-            minimap: { enabled: true },
-            fontSize: 14,
-            wordWrap: 'on',
-            automaticLayout: true,
-            lineNumbers: 'on',
-            scrollBeyondLastLine: false,
-            roundedSelection: false,
-            padding: { top: 10 },
-          }}
-        />
-      </div>
       
-      {/* Run Button and Output Panel */}
       <div className="p-4 bg-white dark:bg-gray-800 border-t dark:border-gray-700">
         <div className="flex items-center mb-2">
           <button
-            onClick={runCode}
+            onClick={executeCode}
             disabled={isRunning}
             className="px-4 py-1 bg-green-500 text-white rounded hover:bg-green-600 disabled:opacity-50 mr-2"
           >
@@ -323,13 +334,21 @@ const CodeEditorPage = () => {
             {output || 'Output will appear here after running the code...'}
           </pre>
         </div>
+        
+        {language === 'python' && (
+          <div className="p-4 border-t border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800">
+            <h3 className="text-sm font-semibold mb-2 dark:text-white">Input for Python (like stdin - separate values with newlines)</h3>
+            <textarea
+              value={userInput}
+              onChange={(e) => setUserInput(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-black dark:text-white h-24"
+              placeholder="Enter input values here, one per line..."
+            />
+          </div>
+        )}
       </div>
     </div>
   );
 };
-
-
-
-
 
 export default CodeEditorPage;
