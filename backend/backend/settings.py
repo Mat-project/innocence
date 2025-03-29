@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     "notification",
     'file.apps.FileConfig',
     'code_editor',
+    'habit',
 ]
 
 MIDDLEWARE = [
