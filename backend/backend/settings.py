@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'file.apps.FileConfig',
     'code_editor',
     'habit',
+    'pomodoro',
 ]
 
 MIDDLEWARE = [

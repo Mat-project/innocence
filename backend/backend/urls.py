@@ -25,4 +25,5 @@ urlpatterns = [
     path('api/file/', include('file.urls')),  # Include file app URLs under the "api/" prefix
     path('api/', include('code_editor.urls')),  # Include code_editor app URLs under the "api/" prefix
     path('api/habit/', include('habit.urls')),
+    path('api/pomodoro/', include('pomodoro.urls')),
 ]
