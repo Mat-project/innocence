@@ -18,6 +18,37 @@ const HabitTracker = () => {
     return `habits_${user?.id || 'guest'}`;
   };
 
+  const transformBackendHabit = (backendData) => {
+    return {
+      id: backendData.id,
+      name: backendData.name,
+      color: backendData.color,
+      createdAt: backendData.created_at || backendData.createdAt,
+      lastUpdate: backendData.last_update || backendData.lastUpdate,
+      totalActive: backendData.total_active || backendData.totalActive || 0,
+      currentStreak: backendData.current_streak || backendData.currentStreak || 0,
+      maxStreak: backendData.max_streak || backendData.maxStreak || 0,
+      streakRatio: backendData.streak_ratio || backendData.streakRatio || 0,
+      streakConsistency: backendData.streak_consistency || backendData.streakConsistency || 0,
+      
+      // Handle both 'months' and 'monthsData'
+      monthsData: (backendData.monthsData || backendData.months || []).map(month => ({
+        name: month.name,
+        year: month.year,
+        month: month.month,
+        days: Array.isArray(month.days) ? month.days.map(Boolean) : [],
+        active: month.active || 0,
+        maxStreak: month.max_streak || month.maxStreak || 0
+      }))
+    };
+  };
+
+  const isSameDay = (date1, date2) => {
+    return date1.getDate() === date2.getDate() &&
+      date1.getMonth() === date2.getMonth() &&
+      date1.getFullYear() === date2.getFullYear();
+  };
+
   useEffect(() => {
     const fetchHabits = async () => {
       setLoading(true);
@@ -25,11 +56,9 @@ const HabitTracker = () => {
       try {
         if (isAuthenticated) {
           const response = await axios.get('/api/habit/habits/');
-          const backendHabits = response.data;
+          setHabits(response.data.map(transformBackendHabit));
 
-          setHabits(backendHabits);
-
-          localStorage.setItem(getUserStorageKey(), JSON.stringify(backendHabits));
+          localStorage.setItem(getUserStorageKey(), JSON.stringify(response.data.map(transformBackendHabit)));
         } else {
           const savedHabits = localStorage.getItem('habits') || localStorage.getItem(getUserStorageKey());
           if (savedHabits) {
@@ -214,7 +243,7 @@ const HabitTracker = () => {
           color: selectedColor
         });
 
-        setHabits(prevHabits => [...prevHabits, response.data]);
+        setHabits(prevHabits => [...prevHabits, transformBackendHabit(response.data)]);
       } else {
         setHabits(prevHabits => [...prevHabits, newHabit]);
       }
@@ -335,9 +364,9 @@ const HabitTracker = () => {
           year: currentViewDate.getFullYear()
         });
 
-        setHabits(prevHabits =>
-          prevHabits.map(habit =>
-            habit.id === habitId ? response.data : habit
+        setHabits(prevHabits => 
+          prevHabits.map(habit => 
+            habit.id === habitId ? transformBackendHabit(response.data) : habit
           )
         );
       }
@@ -612,6 +641,12 @@ const HabitTracker = () => {
                           </button>
                         </div>
 
+                        <div className="text-xs text-center text-gray-500 dark:text-gray-400 mb-2">
+                          <span className="bg-indigo-50 dark:bg-indigo-900/20 px-2 py-1 rounded">
+                            You can only check off habits for today
+                          </span>
+                        </div>
+
                         <div className="grid grid-cols-7 gap-1 mb-1 text-center">
                           {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, i) => (
                             <div key={i} className="text-xs font-medium text-gray-500 dark:text-gray-400 py-1">
@@ -634,18 +669,23 @@ const HabitTracker = () => {
                               <div
                                 key={index}
                                 onClick={() => {
-                                  if (day.isCurrentMonth) {
+                                  const today = new Date();
+                                  if (day.isCurrentMonth && isSameDay(day.date, today)) {
                                     toggleDay(habit.id, day.date.getMonth(), day.date.getDate()-1);
+                                  } else if (day.isCurrentMonth) {
+                                    alert("You can only track habits for the current day.");
                                   }
                                 }}
                                 className={`
-                                  w-9 h-9 flex items-center justify-center rounded-md relative
-                                  ${day.isCurrentMonth ? 'cursor-pointer' : 'opacity-40 cursor-not-allowed'}
+                                  w-11 h-11 flex items-center justify-center rounded-md relative 
+                                  ${day.isCurrentMonth && isSameDay(day.date, new Date()) ? 'cursor-pointer' : 'cursor-not-allowed'}
                                   ${isTodayCell && !isChecked ? 'ring-1 ring-indigo-500 dark:ring-indigo-400' : ''}
                                   ${isChecked
                                     ? 'bg-opacity-90 text-white'
                                     : day.isCurrentMonth
-                                      ? 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600'
+                                      ? isSameDay(day.date, new Date()) 
+                                        ? 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600' 
+                                        : 'bg-gray-100 dark:bg-gray-700'
                                       : 'bg-gray-50 dark:bg-gray-800 text-gray-400 dark:text-gray-600'
                                   }
                                 `}
@@ -653,11 +693,11 @@ const HabitTracker = () => {
                                   backgroundColor: isChecked ? habit.color : undefined
                                 }}
                               >
-                                <span className={`text-xs ${isChecked ? 'text-white' : 'text-gray-700 dark:text-gray-300'}`}>
+                                <span className={`text-sm font-medium ${isChecked ? 'text-white' : 'text-gray-700 dark:text-gray-300'}`}>
                                   {day.dayOfMonth}
                                 </span>
                                 {isChecked && (
-                                  <Check className="absolute right-0 bottom-0 h-2.5 w-2.5 text-white" />
+                                  <Check className="absolute right-1 bottom-1 h-3.5 w-3.5 text-white" />
                                 )}
                               </div>
                             );
@@ -734,13 +774,24 @@ const HabitTracker = () => {
                                   return (
                                     <div
                                       key={dayIndex}
-                                      onClick={() => toggleDay(habit.id, monthIndex, day-1)}
+                                      onClick={() => {
+                                        const today = new Date();
+                                        const clickedDate = new Date(currentViewDate.getFullYear(), monthIndex, day);
+                                        if (isSameDay(clickedDate, today)) {
+                                          toggleDay(habit.id, monthIndex, day-1);
+                                        } else {
+                                          alert("You can only track habits for the current day.");
+                                        }
+                                      }}
                                       className={`
-                                        h-5 w-5 flex items-center justify-center rounded-sm cursor-pointer text-2xs
+                                        h-7 w-7 flex items-center justify-center rounded-sm 
+                                        ${isSameDay(new Date(currentViewDate.getFullYear(), monthIndex, day), new Date()) ? 'cursor-pointer' : 'cursor-not-allowed'}
                                         ${isDayToday && !isCompleted ? 'ring-1 ring-indigo-500 dark:ring-indigo-400' : ''}
                                         ${isCompleted
                                           ? 'text-white'
-                                          : 'bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500 text-gray-800 dark:text-gray-300'
+                                          : isDayToday 
+                                            ? 'bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500 text-gray-800 dark:text-gray-300'
+                                            : 'bg-gray-100 dark:bg-gray-600 text-gray-800 dark:text-gray-300'
                                         }
                                       `}
                                       style={{ backgroundColor: isCompleted ? habit.color : undefined }}
