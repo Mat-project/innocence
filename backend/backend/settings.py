@@ -44,9 +44,9 @@ INSTALLED_APPS = [
     "task",
     "notification",
     'file.apps.FileConfig',
-    'code_editor',
     'habit',
     "pomodoro",
+    'code_editor',
    
 ]
 

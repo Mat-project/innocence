@@ -23,7 +23,7 @@ urlpatterns = [
     path('api/tasks/', include('task.urls')),  # Include task routes here
     path('api/notifications/', include('notification.urls')),  # added notifications
     path('api/file/', include('file.urls')),  # Include file app URLs under the "api/" prefix
-    path('api/', include('code_editor.urls')),  # Include code_editor app URLs under the "api/" prefix
     path('api/habit/', include('habit.urls')),
     path('api/pomodoro/', include('pomodoro.urls')),
+    path('api/code-editor/', include('code_editor.urls')),
 ]
