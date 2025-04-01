@@ -1,37 +1,46 @@
-import { useEffect, useRef } from "react"
-import { Briefcase, Users, FolderArchive, Edit, Activity, Calendar, BarChart3, MessageSquare } from "lucide-react"
+import { useEffect, useRef } from "react";
+import {
+  Briefcase,
+  Users,
+  FolderArchive,
+  Edit,
+  Activity,
+  Calendar,
+  BarChart3,
+  MessageSquare,
+} from "lucide-react";
 
 export default function Features() {
-  const featureRefs = useRef([])
+  const featureRefs = useRef([]);
 
   const addToRefs = (el) => {
     if (el && !featureRefs.current.includes(el)) {
-      featureRefs.current.push(el)
+      featureRefs.current.push(el);
     }
-  }
+  };
 
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
-            entry.target.classList.add("animate-fadeIn")
-            entry.target.classList.remove("opacity-0")
-            observer.unobserve(entry.target)
+            entry.target.classList.add("animate-fadeIn");
+            entry.target.classList.remove("opacity-0");
+            observer.unobserve(entry.target);
           }
-        })
+        });
       },
       { threshold: 0.1 }
-    )
+    );
 
-    featureRefs.current.forEach((el) => observer.observe(el))
+    featureRefs.current.forEach((el) => observer.observe(el));
 
     return () => {
       featureRefs.current.forEach((el) => {
-        observer.unobserve(el)
-      })
-    }
-  }, [])
+        observer.unobserve(el);
+      });
+    };
+  }, []);
 
   const features = [
     {
@@ -51,12 +60,12 @@ export default function Features() {
     },
     {
       icon: <Edit className="h-10 w-10 text-teal-500 dark:text-teal-300" />,
-      title: "Advanced Editors",
+      title: "Editors",
       description: "Edit documents with our suite of professional tools.",
     },
     {
       icon: <Activity className="h-10 w-10 text-red-500 dark:text-red-300" />,
-      title: "Health Analyzer",
+      title: "Performance Tracking",
       description: "Monitor productivity patterns with personalized insights.",
     },
     {
@@ -74,7 +83,7 @@ export default function Features() {
       title: "Integrated Chat",
       description: "Stay connected with team chat integrated into the platform.",
     },
-  ]
+  ];
 
   return (
     <section className="py-20 w-full bg-gray-50 dark:bg-gray-900 mb-3">
@@ -83,10 +92,10 @@ export default function Features() {
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-gray-200 text-sm font-medium mb-4 hover:scale-105 transition-transform">
             Powerful Features
           </div>
-          <h2 className="text-3xl md:text-4xl font-bold mb-6 text-gray-900 dark:text-gray-100 hover:text-blue-500 transition-colors">
+          <h2 className="text-3xl md:text-4xl font-bold mb-6 text-gray-900 dark:text-gray-100">
             Everything You Need to <span className="gradient-text">Supercharge</span> Your Workflow
           </h2>
-          <p className="text-lg text-gray-700 dark:text-gray-300 hover:text-blue-400 transition-colors">
+          <p className="text-lg text-gray-700 dark:text-gray-300">
             Our comprehensive suite of tools is designed to help you work smarter, not harder.
             Discover how WebPro Toolkit can transform your productivity.
           </p>
@@ -96,16 +105,16 @@ export default function Features() {
             <div
               key={index}
               ref={addToRefs}
-              className="opacity-0 transform translate-y-4 transition-all duration-700 hover:scale-105 hover:shadow-xl p-3 rounded-2xl"
-              style={{ animationDelay: `${0.1 * index}s` }}
+              className="opacity-0 transform translate-y-4 transition-all duration-700 hover:scale-105 hover:shadow-lg hover:border-2 hover:border-transparent p-5 rounded-2xl bg-white dark:bg-gray-800"
+              style={{ animationDelay: (0.1 * index) + 's' }}
             >
-              <div className="mb-4 flex justify-center hover:text-blue-500 transition-colors">
+              <div className="mb-4 flex justify-center">
                 {feature.icon}
               </div>
-              <h3 className="text-xl font-semibold mb-2 text-gray-900 dark:text-gray-100 hover:text-blue-500 transition-colors">
+              <h3 className="text-xl font-semibold mb-2 text-gray-900 dark:text-gray-100">
                 {feature.title}
               </h3>
-              <p className="text-gray-700 dark:text-gray-300 hover:text-blue-400 transition-colors">
+              <p className="text-gray-700 dark:text-gray-300">
                 {feature.description}
               </p>
             </div>
@@ -113,6 +122,5 @@ export default function Features() {
         </div>
       </div>
     </section>
-  )
+  );
 }
-
