@@ -14,7 +14,8 @@ import FileConverterPage from './pages/FileConvertor/FileConverterPage';
 import About from './component/LandingComponent/about';
 import HabitTracker from './pages/HabitTracker/HabitTracker';
 import PomodoroTimer from './pages/PomodoroTimer/PomodoroTimer';
-import CodeEditorPage from './pages/CodeEditor/CodeEditorPage';     
+import CodeEditorPage from './pages/CodeEditor/CodeEditorPage';   
+import NotepadPage from './pages/Notepad/NotepadPage';  
 
 
 // Protected Route component
@@ -66,6 +67,7 @@ function App() {
               <Route path="habit-tracker" element={<HabitTracker />} />
               <Route path="pomodoro-timer" element={<PomodoroTimer />} />
               <Route path="/code-editor/" element={<CodeEditorPage />} />
+              <Route path="/notepad/" element={<NotepadPage />} />
             </Route>
 
             {/* Catch-all route for 404 */}

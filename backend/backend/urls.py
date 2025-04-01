@@ -26,4 +26,5 @@ urlpatterns = [
     path('api/habit/', include('habit.urls')),
     path('api/pomodoro/', include('pomodoro.urls')),
     path('api/code-editor/', include('code_editor.urls')),
+    path('api/notes/', include('notes.urls')),
 ]

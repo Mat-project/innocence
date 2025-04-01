@@ -47,7 +47,7 @@ INSTALLED_APPS = [
     'habit',
     "pomodoro",
     'code_editor',
-   
+    'notes',
 ]
 
 MIDDLEWARE = [
