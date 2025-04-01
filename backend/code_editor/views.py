@@ -13,6 +13,7 @@ import subprocess
 import tempfile
 import os
 import json
+import sys
 
 class FolderViewSet(viewsets.ModelViewSet):
     """
@@ -243,32 +244,48 @@ class RunPythonCodeView(views.APIView):
     
     def post(self, request, format=None):
         code = request.data.get('code', '')
-        if not code:
-            return Response(
-                {'error': 'No code provided'}, 
-                status=status.HTTP_400_BAD_REQUEST
-            )
+        inputs = request.data.get('inputs', [])
         
-        # Create a temporary file with the code
-        with tempfile.NamedTemporaryFile(suffix='.py', delete=False) as temp_file:
+        if not code:
+            return Response({'error': 'No code provided'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        print(f"Running code with {len(inputs)} inputs: {inputs}")
+        
+        # Create a temporary file
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as temp_file:
             temp_filename = temp_file.name
-            temp_file.write(code.encode('utf-8'))
+            temp_file.write(code)
         
         try:
-            # Execute the code with resource limits
-            # Add timeout to prevent infinite loops
-            result = subprocess.run(
-                ['python', temp_filename],
-                capture_output=True,
-                text=True,
-                timeout=10  # 10 second timeout
+            # Prepare input string (join all inputs with newlines)
+            input_string = '\n'.join(inputs) + '\n' if inputs else ''
+            
+            # Run the process with inputs
+            process = subprocess.Popen(
+                [sys.executable, temp_filename],
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True
             )
             
+            # Send inputs and get output
+            stdout, stderr = process.communicate(input=input_string, timeout=10)
+            
+            # Check if there might be an input prompt in the output
+            # This is a simple heuristic - if stdout ends with a non-newline character
+            # and doesn't have an error, it might be waiting for input
+            needs_input = False
+            if process.returncode == 0 and stdout and not stdout.endswith('\n') and 'input(' in code:
+                needs_input = True
+            
             return Response({
-                'stdout': result.stdout,
-                'stderr': result.stderr,
-                'exit_code': result.returncode
+                'stdout': stdout,
+                'stderr': stderr,
+                'exit_code': process.returncode,
+                'needs_input': needs_input
             })
+            
         except subprocess.TimeoutExpired:
             return Response({
                 'stdout': '',
@@ -282,6 +299,6 @@ class RunPythonCodeView(views.APIView):
                 'exit_code': 1
             })
         finally:
-            # Clean up the temporary file
+            # Clean up temp file
             if os.path.exists(temp_filename):
                 os.unlink(temp_filename)
