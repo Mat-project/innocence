@@ -16,13 +16,16 @@ import About from './component/LandingComponent/about';
 import HabitTracker from './pages/HabitTracker/HabitTracker';
 import PomodoroTimer from './pages/PomodoroTimer/PomodoroTimer';
 
+
 import CodeEditorPage from './pages/CodeEditor/CodeEditorPage'; 
-import CodeEditorFeature from './pages/CodeEditor/CodeEditorFeature';  
-import MobileTaskPage from './pages/task/MobileTaskPage';
-import ResponsiveTaskManager from './pages/task/ResponsiveTaskManager';
+
 import ChatPage from './pages/Chat/ChatPage';
 import ResetPassword from './pages/ResetPassword';
 import Chat from './pages/Chat/fuck/Chat';
+  
+import NotepadPage from './pages/Notepad/NotepadPage';  
+
+
 
 // Protected Route component
 
@@ -77,10 +80,14 @@ function App() {
 {/*               <Route path="about" element={<About />} /> */}
               <Route path="habit-tracker" element={<HabitTracker />} />
               <Route path="pomodoro-timer" element={<PomodoroTimer />} />
-              <Route path="/code-editor/*" element={<CodeEditorFeature />} />
+
               <Route path="/chat" element={<ChatPage />} />
               <Route path="/chatf" element={<Chat />} />
 {/*               <Toaster position="top-right" /> */}
+
+              <Route path="/code-editor/" element={<CodeEditorPage />} />
+              <Route path="/notepad/" element={<NotepadPage />} />
+
             </Route>
 
             {/* Catch-all route for 404 */}

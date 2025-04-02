@@ -45,8 +45,14 @@ INSTALLED_APPS = [
     "task",
     "notification",
     'file.apps.FileConfig',
+    'habit',
+    "pomodoro",
     'code_editor',
+
     'chat',
+
+    'notes',
+
 ]
 
 MIDDLEWARE = [

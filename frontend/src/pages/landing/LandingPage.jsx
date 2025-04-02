@@ -5,7 +5,7 @@ import Navbar from "../../component/LandingComponent/Navbar"
 import Hero from "../../component/LandingComponent/Hero"
 import About from "../../component/LandingComponent/about"
 import Features from "../../component/LandingComponent/Features"
-import Testimonials from "../../component/LandingComponent/testimonials"
+//import Testimonials from "../../component/LandingComponent/testimonials"
 import Contact from "../../component/LandingComponent/contact"
 import Footer from "../../component/LandingComponent/Footer"
 
@@ -29,7 +29,7 @@ export default function LandingPage() {
         <Hero />
         <About />
         <Features />
-        <Testimonials />
+        {/* <Testimonials /> */}
         <Contact />
       </main>
       <Footer />

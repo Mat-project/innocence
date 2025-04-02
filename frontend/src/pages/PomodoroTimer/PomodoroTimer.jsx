@@ -1,676 +1,493 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Button } from '@components/ui/button';
-import { Switch } from '@components/ui/switch';
-import { Progress } from '@components/ui/progress';
-import { Bell, PauseCircle, PlayCircle, RotateCcw, Settings, Volume2, VolumeX } from 'lucide-react';
+import { 
+  Play, 
+  Pause, 
+  SkipForward, 
+  RotateCcw, 
+  Settings,
+  Bell,
+  BellOff,
+  X
+} from 'lucide-react';
+import { savePomodoroSession } from '../../services/api/pomodoroApi';
+import { useAuth } from '../../context/AuthContext'; // Assuming you have auth context
+import PomodoroAnalytics from './components/PomodoroAnalytics';
 
 const PomodoroTimer = () => {
   // Timer states
-  const [mode, setMode] = useState('pomodoro'); // 'pomodoro', 'shortBreak', 'longBreak'
-  const [time, setTime] = useState(25 * 60); // default 25 minutes in seconds
+  const [mode, setMode] = useState('focus'); // 'focus', 'break', 'longBreak'
+  const [timeLeft, setTimeLeft] = useState(25 * 60); // in seconds
   const [isActive, setIsActive] = useState(false);
-  const [sessions, setSessions] = useState(0);
   const [showSettings, setShowSettings] = useState(false);
-  const [soundMuted, setSoundMuted] = useState(false);
-  const [theme, setTheme] = useState('light');
+  const [pomodoroCount, setPomodoroCount] = useState(0);
+  const [soundEnabled, setSoundEnabled] = useState(true);
   
   // Settings
   const [settings, setSettings] = useState({
-    pomodoro: 25,
-    shortBreak: 5,
-    longBreak: 15,
-    autoStartBreaks: true,
-    autoStartPomodoros: false,
-    longBreakInterval: 4,
-    notifications: true,
-    alarmSound: 'digital', // 'digital', 'bell', 'soft'
+    focusTime: 25,      // minutes
+    breakTime: 5,       // minutes
+    longBreakTime: 15,  // minutes
+    cyclesBeforeLongBreak: 4
   });
-
-  // Task tracking
-  const [currentTask, setCurrentTask] = useState('');
-  const [taskHistory, setTaskHistory] = useState([]);
-
-  // Refs
-  const intervalRef = useRef(null);
+  
+  // Audio reference for timer completion sound
   const audioRef = useRef(null);
   
-  // Theme colors
-  const themeColors = {
-    pomodoro: {
-      light: { bg: 'bg-red-100', indicator: 'bg-red-500', button: 'bg-red-500 hover:bg-red-600' },
-      dark: { bg: 'bg-red-900/30', indicator: 'bg-red-500', button: 'bg-red-500 hover:bg-red-600' }
-    },
-    shortBreak: {
-      light: { bg: 'bg-green-100', indicator: 'bg-green-500', button: 'bg-green-500 hover:bg-green-600' },
-      dark: { bg: 'bg-green-900/30', indicator: 'bg-green-500', button: 'bg-green-500 hover:bg-green-600' }
-    },
-    longBreak: {
-      light: { bg: 'bg-blue-100', indicator: 'bg-blue-500', button: 'bg-blue-500 hover:bg-blue-600' },
-      dark: { bg: 'bg-blue-900/30', indicator: 'bg-blue-500', button: 'bg-blue-500 hover:bg-blue-600' }
-    }
-  };
+  // Timer interval reference
+  const timerRef = useRef(null);
 
-  // Sound effects
-  const soundEffects = {
-    digital: 'https://assets.mixkit.co/sfx/preview/mixkit-alarm-digital-clock-beep-989.mp3',
-    bell: 'https://assets.mixkit.co/sfx/preview/mixkit-classic-alarm-995.mp3',
-    soft: 'https://assets.mixkit.co/sfx/preview/mixkit-interface-hint-notification-911.mp3'
-  };
+  // New state variables for session tracking
+  const [sessionStartTime, setSessionStartTime] = useState(null);
+  const [sessionInProgress, setSessionInProgress] = useState(false);
+  const { isAuthenticated } = useAuth(); // Get authentication status
 
-  // Effects
+  // Add a ref to track if saving is in progress
+  const isSavingRef = useRef(false);
+  
+  // Effect to handle timer countdown
   useEffect(() => {
-    // Initialize audio
-    audioRef.current = new Audio(soundEffects[settings.alarmSound]);
-    
-    // Check system preference for dark mode
-    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      setTheme('dark');
-      document.documentElement.classList.add('dark');
-    }
-    
-    // Add listener for system theme changes
-    const darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    const handleDarkModeChange = (e) => {
-      setTheme(e.matches ? 'dark' : 'light');
-      if (e.matches) {
-        document.documentElement.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
-      }
-    };
-    
-    try {
-      // Modern API (addEventListener)
-      darkModeMediaQuery.addEventListener('change', handleDarkModeChange);
-    } catch (e) {
-      // Fallback for older browsers that don't support addEventListener
-      try {
-        darkModeMediaQuery.addListener(handleDarkModeChange);
-      } catch (e2) {
-        console.warn('Could not add dark mode listener', e2);
-      }
-    }
-    
-    // Set document title
-    updateDocumentTitle();
-    
-    // Load settings from localStorage if available
-    const savedSettings = localStorage.getItem('pomodoroSettings');
-    if (savedSettings) {
-      try {
-        const parsedSettings = JSON.parse(savedSettings);
-        setSettings(parsedSettings);
-      } catch (e) {
-        console.error('Error loading settings:', e);
-      }
-    }
-    
-    // Load session data if available
-    const savedSessions = localStorage.getItem('pomodoroSessions');
-    if (savedSessions) {
-      try {
-        setSessions(parseInt(savedSessions, 10) || 0);
-      } catch (e) {
-        console.error('Error loading sessions:', e);
-      }
-    }
-    
-    // Load task history if available
-    const savedTaskHistory = localStorage.getItem('pomodoroTaskHistory');
-    if (savedTaskHistory) {
-      try {
-        setTaskHistory(JSON.parse(savedTaskHistory));
-      } catch (e) {
-        console.error('Error loading task history:', e);
-      }
-    }
-    
-    // Cleanup on unmount
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-      
-      try {
-        // Modern API (removeEventListener)
-        darkModeMediaQuery.removeEventListener('change', handleDarkModeChange);
-      } catch (e) {
-        // Fallback for older browsers
-        try {
-          darkModeMediaQuery.removeListener(handleDarkModeChange);
-        } catch (e2) {
-          console.warn('Could not remove dark mode listener', e2);
-        }
-      }
-      
-      document.title = 'Pomodoro Timer'; // Reset document title
-    };
-  }, []);
-
-  // Update document title based on current timer
-  const updateDocumentTitle = () => {
-    const formattedTime = formatTime(time);
-    const modeEmoji = mode === 'pomodoro' ? '🍅' : mode === 'shortBreak' ? '☕' : '🌴';
-    document.title = `${formattedTime} ${modeEmoji} Pomodoro`;
-  };
-
-  useEffect(() => {
-    // Save settings to localStorage when they change
-    try {
-      localStorage.setItem('pomodoroSettings', JSON.stringify(settings));
-    } catch (e) {
-      console.error('Error saving settings to localStorage:', e);
-    }
-  }, [settings]);
-
-  useEffect(() => {
-    // Save sessions to localStorage when they change
-    try {
-      localStorage.setItem('pomodoroSessions', sessions.toString());
-    } catch (e) {
-      console.error('Error saving sessions to localStorage:', e);
-    }
-  }, [sessions]);
-
-  useEffect(() => {
-    // Save task history to localStorage when it changes
-    try {
-      localStorage.setItem('pomodoroTaskHistory', JSON.stringify(taskHistory));
-    } catch (e) {
-      console.error('Error saving task history to localStorage:', e);
-    }
-  }, [taskHistory]);
-
-  useEffect(() => {
-    // Change timer based on mode
-    switch (mode) {
-      case 'pomodoro':
-        setTime(settings.pomodoro * 60);
-        break;
-      case 'shortBreak':
-        setTime(settings.shortBreak * 60);
-        break;
-      case 'longBreak':
-        setTime(settings.longBreak * 60);
-        break;
-      default:
-        setTime(settings.pomodoro * 60);
-    }
-    
-    // Update audio source when alarm sound setting changes
-    if (audioRef.current) {
-      audioRef.current.src = soundEffects[settings.alarmSound];
-    }
-  }, [mode, settings]);
-
-  useEffect(() => {
-    // Timer logic
     if (isActive) {
-      intervalRef.current = setInterval(() => {
-        setTime((prevTime) => {
+      timerRef.current = setInterval(() => {
+        setTimeLeft(prevTime => {
           if (prevTime <= 1) {
-            clearInterval(intervalRef.current);
             handleTimerComplete();
             return 0;
           }
-          const newTime = prevTime - 1;
-          // Update document title
-          updateDocumentTitle();
-          return newTime;
+          return prevTime - 1;
         });
       }, 1000);
-    } else if (intervalRef.current) {
-      clearInterval(intervalRef.current);
+    } else if (!isActive && timerRef.current) {
+      clearInterval(timerRef.current);
     }
-    
-    // Update document title when timer starts/stops
-    updateDocumentTitle();
     
     return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
+      if (timerRef.current) clearInterval(timerRef.current);
     };
   }, [isActive]);
-
-  // Timer functions
-  const handleTimerComplete = () => {
-    // Play notification sound if not muted
-    if (settings.notifications && !soundMuted && audioRef.current) {
-      audioRef.current.play().catch(err => {
-        console.error('Error playing audio:', err);
-        // Try to recover by creating a new audio element
-        audioRef.current = new Audio(soundEffects[settings.alarmSound]);
-        audioRef.current.play().catch(e => console.error('Still cannot play audio:', e));
-      });
-    }
+  
+  // Effect to set initial time when mode changes
+  useEffect(() => {
+    resetTimer();
+  }, [mode, settings]);
+  
+  // Save settings to localStorage
+  useEffect(() => {
+    localStorage.setItem('pomodoroSettings', JSON.stringify(settings));
+  }, [settings]);
+  
+  // Load settings from localStorage
+  useEffect(() => {
+    const savedSettings = localStorage.getItem('pomodoroSettings');
+    const savedSound = localStorage.getItem('pomodoroSoundEnabled');
     
-    // Show browser notifications
-    if (settings.notifications) {
-      // Browser notifications
-      if ('Notification' in window && Notification.permission === 'granted') {
-        let notificationTitle = 'Pomodoro Timer';
-        let notificationBody = '';
-        
-        if (mode === 'pomodoro') {
-          notificationTitle = '🍅 Pomodoro Complete!';
-          notificationBody = currentTask 
-            ? `You've completed your pomodoro for: ${currentTask}. Time for a break!` 
-            : 'Time for a break!';
-        } else {
-          notificationTitle = mode === 'shortBreak' ? '☕ Break Complete!' : '🌴 Long Break Complete!';
-          notificationBody = 'Break finished. Back to work!';
-        }
-        
-        try {
-          new Notification(notificationTitle, {
-            body: notificationBody,
-            icon: '/favicon.ico'
-          });
-        } catch (e) {
-          console.error('Error showing notification:', e);
-        }
+    if (savedSettings) {
+      try {
+        setSettings(JSON.parse(savedSettings));
+      } catch (error) {
+        console.error('Error loading settings:', error);
       }
     }
-
-    if (mode === 'pomodoro') {
-      // Record completed pomodoro in task history if there's a current task
-      if (currentTask.trim()) {
-        const timestamp = new Date().toISOString();
-        const newTaskEntry = {
-          task: currentTask,
-          timestamp,
-          duration: settings.pomodoro
+    
+    if (savedSound !== null) {
+      setSoundEnabled(savedSound === 'true');
+    }
+  }, []);
+  
+  // Save sound preference
+  useEffect(() => {
+    localStorage.setItem('pomodoroSoundEnabled', soundEnabled.toString());
+  }, [soundEnabled]);
+  
+  // Handle timer completion
+  const handleTimerComplete = async () => {
+    console.log('Timer complete called at:', new Date().toISOString());
+    // Clear the timer interval first
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    
+    // Play the sound notification
+    playSound();
+    
+    // Save session data only once
+    if (mode === 'focus' && sessionInProgress && isAuthenticated && !isSavingRef.current) {
+      isSavingRef.current = true; // Set flag to prevent duplicate saves
+      
+      const sessionEndTime = new Date();
+      
+      try {
+        const sessionData = {
+          focus_time: settings.focusTime,
+          break_time: settings.breakTime,
+          long_break_time: settings.longBreakTime,
+          cycles: settings.cyclesBeforeLongBreak,
+          start_time: sessionStartTime.toISOString(),
+          end_time: sessionEndTime.toISOString(),
+          date: sessionStartTime.toISOString().split('T')[0],
+          completed: true
         };
         
-        setTaskHistory(prev => [newTaskEntry, ...prev].slice(0, 50)); // Limit history to 50 items
+        await savePomodoroSession(sessionData);
+        console.log('Pomodoro session saved successfully');
+      } catch (error) {
+        console.error('Failed to save session:', error);
       }
       
-      const newSessions = sessions + 1;
-      setSessions(newSessions);
+      setSessionInProgress(false);
+      isSavingRef.current = false; // Reset the flag
+    }
+    
+    // Rest of your mode switching logic
+    if (mode === 'focus') {
+      // Increment pomodoro count
+      const newCount = pomodoroCount + 1;
+      setPomodoroCount(newCount);
       
-      if (newSessions % settings.longBreakInterval === 0) {
+      // Check if we need a long break
+      if (newCount >= settings.cyclesBeforeLongBreak) {
         setMode('longBreak');
-        if (settings.autoStartBreaks) setIsActive(true);
-        else setIsActive(false);
+        setPomodoroCount(0);
       } else {
-        setMode('shortBreak');
-        if (settings.autoStartBreaks) setIsActive(true);
-        else setIsActive(false);
+        setMode('break');
       }
     } else {
-      setMode('pomodoro');
-      if (settings.autoStartPomodoros) setIsActive(true);
-      else setIsActive(false);
+      // After any break, switch to focus mode
+      setMode('focus');
     }
   };
-
-  const handleStart = () => {
-    setIsActive(true);
-    // Vibration feedback on mobile (if supported)
-    if ('vibrate' in navigator) {
-      try {
-        navigator.vibrate(50);
-      } catch (e) {
-        console.warn('Vibration API not supported or disabled', e);
-      }
+  
+  // Format time to MM:SS
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+  
+  // Toggle timer active state
+  const toggleTimer = () => {
+    const newIsActive = !isActive;
+    setIsActive(newIsActive);
+    
+    // Record session start time when starting a focus session
+    if (newIsActive && mode === 'focus' && !sessionInProgress) {
+      setSessionStartTime(new Date());
+      setSessionInProgress(true);
     }
   };
-
-  const handlePause = () => {
+  
+  // Reset the timer to initial values based on current mode
+  const resetTimer = () => {
     setIsActive(false);
-    // Vibration feedback on mobile (if supported)
-    if ('vibrate' in navigator) {
-      try {
-        navigator.vibrate([30, 30, 30]);
-      } catch (e) {
-        console.warn('Vibration API not supported or disabled', e);
-      }
-    }
-  };
-
-  const handleReset = () => {
-    setIsActive(false);
+    
     switch (mode) {
-      case 'pomodoro':
-        setTime(settings.pomodoro * 60);
+      case 'focus':
+        setTimeLeft(settings.focusTime * 60);
         break;
-      case 'shortBreak':
-        setTime(settings.shortBreak * 60);
+      case 'break':
+        setTimeLeft(settings.breakTime * 60);
         break;
       case 'longBreak':
-        setTime(settings.longBreak * 60);
+        setTimeLeft(settings.longBreakTime * 60);
         break;
       default:
-        setTime(settings.pomodoro * 60);
+        setTimeLeft(settings.focusTime * 60);
     }
-    // Vibration feedback on mobile (if supported)
-    if ('vibrate' in navigator) {
-      try {
-        navigator.vibrate([20, 20, 20, 20]);
-      } catch (e) {
-        console.warn('Vibration API not supported or disabled', e);
+  };
+  
+  // Skip to next mode
+  const skipToNext = () => {
+    if (mode === 'focus') {
+      const newCount = pomodoroCount + 1;
+      setPomodoroCount(newCount);
+      
+      if (newCount >= settings.cyclesBeforeLongBreak) {
+        setMode('longBreak');
+        setPomodoroCount(0);
+      } else {
+        setMode('break');
       }
+    } else {
+      setMode('focus');
     }
   };
-
-  const handleModeChange = (newMode) => {
-    // Only change if the mode is different to avoid unnecessary resets
-    if (newMode !== mode) {
-      setIsActive(false);
-      setMode(newMode);
+  
+  // Play completion sound
+  const playSound = () => {
+    if (soundEnabled && audioRef.current) {
+      audioRef.current.currentTime = 0;
+      audioRef.current.play().catch(err => console.log('Error playing sound:', err));
     }
   };
-
-  const handleSettingsChange = (setting, value) => {
-    // Validate input values to prevent errors
-    if (typeof value === 'number' && (isNaN(value) || value <= 0)) {
-      return; // Don't update with invalid values
-    }
+  
+  // Handle settings input changes
+  const handleSettingChange = (key, value) => {
+    // Convert to number and validate
+    const numValue = parseInt(value);
     
-    setSettings(prev => ({
-      ...prev,
-      [setting]: value
-    }));
+    if (isNaN(numValue) || numValue <= 0) return;
+    
+    const maxValues = {
+      focusTime: 60,
+      breakTime: 30,
+      longBreakTime: 45,
+      cyclesBeforeLongBreak: 10
+    };
+    
+    if (numValue > maxValues[key]) return;
+    
+    setSettings({
+      ...settings,
+      [key]: numValue
+    });
   };
-
-  const toggleSound = () => {
-    setSoundMuted(!soundMuted);
-  };
-
-  // Formatting functions
-  const formatTime = (timeInSeconds) => {
-    const minutes = Math.floor(timeInSeconds / 60);
-    const seconds = timeInSeconds % 60;
-    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-  };
-
-  const calculateProgress = () => {
-    let totalTime;
+  
+  // Get the color theme based on current mode
+  const getModeColor = () => {
     switch (mode) {
-      case 'pomodoro':
-        totalTime = settings.pomodoro * 60;
-        break;
-      case 'shortBreak':
-        totalTime = settings.shortBreak * 60;
-        break;
+      case 'focus':
+        return 'bg-red-500';
+      case 'break':
+        return 'bg-green-500';
       case 'longBreak':
-        totalTime = settings.longBreak * 60;
-        break;
+        return 'bg-blue-500';
       default:
-        totalTime = settings.pomodoro * 60;
+        return 'bg-red-500';
     }
-    
-    // Guard against division by zero
-    if (totalTime <= 0) totalTime = 1;
-    
-    const progress = 100 - (time / totalTime * 100);
-    // Ensure progress is between 0 and 100
-    return Math.min(100, Math.max(0, progress));
   };
-
-  // Format date for display
-  const formatDate = (isoString) => {
-    try {
-      const date = new Date(isoString);
-      return date.toLocaleString();
-    } catch (e) {
-      return 'Unknown date';
+  
+  // Get display label for current mode
+  const getModeLabel = () => {
+    switch (mode) {
+      case 'focus':
+        return 'Focus Time';
+      case 'break':
+        return 'Break Time';
+      case 'longBreak':
+        return 'Long Break';
+      default:
+        return 'Focus Time';
     }
   };
 
-  // Request notification permission
-  const requestNotificationPermission = () => {
-    if ('Notification' in window && Notification.permission !== 'granted') {
-      Notification.requestPermission().catch(e => {
-        console.error('Error requesting notification permission:', e);
-      });
-    }
-  };
-
-  useEffect(() => {
-    if (settings.notifications && 'Notification' in window) {
-      requestNotificationPermission();
-    }
-  }, [settings.notifications]);
-
-  // Reset sessions counter
-  const handleResetSessions = () => {
-    if (window.confirm('Are you sure you want to reset your sessions count?')) {
-      setSessions(0);
-    }
-  };
-
-  // Clear task history
-  const handleClearTaskHistory = () => {
-    if (window.confirm('Are you sure you want to clear your task history?')) {
-      setTaskHistory([]);
-    }
-  };
-
+  // Login reminder component
+  const LoginReminder = () => (
+    <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md text-sm text-yellow-700">
+      <p>Sign in to track your pomodoro sessions and view statistics.</p>
+      <a href="/login" className="text-blue-500 hover:underline mt-1 inline-block">
+        Login now →
+      </a>
+    </div>
+  );
+  
   return (
-    <div className={`w-full max-w-md mx-auto p-6 ${theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'} rounded-lg shadow-md`}>
-      <h2 className="text-2xl font-bold text-center mb-6">Pomodoro Timer</h2>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      {/* Hidden audio element */}
+      <audio ref={audioRef} src="https://assets.mixkit.co/sfx/preview/mixkit-alarm-digital-clock-beep-989.mp3" />
       
-      {/* Current Task Input */}
-      <div className="mb-4">
-        <input
-          type="text"
-          placeholder="What are you working on?"
-          value={currentTask}
-          onChange={(e) => setCurrentTask(e.target.value)}
-          className={`w-full p-2 rounded-md ${theme === 'dark' ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'} border`}
-        />
-      </div>
-      
-      {/* Timer Tabs */}
-      <div className="flex justify-center mb-6">
-        <div className="grid grid-cols-3 gap-2 w-full max-w-sm">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-200">Pomodoro Timer</h1>
+          <div className="flex space-x-2">
+            <button
+              onClick={() => setSoundEnabled(!soundEnabled)}
+              className="p-2 rounded-md text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700"
+              title={soundEnabled ? "Mute sound" : "Enable sound"}
+            >
+              {soundEnabled ? <Bell size={20} /> : <BellOff size={20} />}
+            </button>
+            <button
+              onClick={() => setShowSettings(true)}
+              className="p-2 rounded-md text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700"
+              title="Settings"
+            >
+              <Settings size={20} />
+            </button>
+          </div>
+        </div>
+        
+        {/* Mode indicator */}
+        <div className="mb-6 text-center">
+          <div className={`inline-block px-3 py-1 rounded-md text-white ${getModeColor()}`}>
+            {getModeLabel()}
+          </div>
+          {mode === 'focus' && (
+            <div className="text-sm text-gray-500 mt-1">
+              Session {pomodoroCount + 1} of {settings.cyclesBeforeLongBreak}
+            </div>
+          )}
+        </div>
+        
+        {/* Timer display */}
+        <div className="text-6xl font-mono text-center font-bold mb-8 text-gray-800 dark:text-gray-200">
+          {formatTime(timeLeft)}
+        </div>
+        
+        {/* Progress dots */}
+        <div className="flex justify-center mb-6">
+          {Array.from({ length: settings.cyclesBeforeLongBreak }).map((_, index) => (
+            <div 
+              key={index}
+              className={`h-3 w-3 rounded-full mx-1 ${
+                index < pomodoroCount ? getModeColor() : 'bg-gray-200 dark:bg-gray-700'
+              }`}
+            />
+          ))}
+        </div>
+        
+        {/* Timer controls */}
+        <div className="flex justify-center space-x-4 mb-6">
+          {!isActive ? (
+            <button
+              onClick={toggleTimer}
+              className="flex items-center justify-center w-12 h-12 rounded-full bg-green-500 text-black shadow-md hover:bg-green-600 transition-colors"
+              title="Start"
+            >
+              <Play size={24} />
+            </button>
+          ) : (
+            <button
+              onClick={toggleTimer}
+              className="flex items-center justify-center w-12 h-12 rounded-full bg-yellow-500 text-white shadow-md hover:bg-yellow-600 transition-colors"
+              title="Pause"
+            >
+              <Pause size={24} />
+            </button>
+          )}
+          
           <button
-            onClick={() => handleModeChange('pomodoro')}
-            className={`py-2 rounded-md transition-colors ${mode === 'pomodoro' 
-              ? themeColors.pomodoro[theme].button + ' text-white' 
-              : (theme === 'dark' ? 'bg-gray-700 text-gray-200' : 'bg-gray-200 text-gray-700')}`}
+            onClick={resetTimer}
+            className="flex items-center justify-center w-12 h-12 rounded-full bg-gray-300 text-gray-700 shadow-md hover:bg-gray-400 transition-colors dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+            title="Reset"
           >
-            Pomodoro
+            <RotateCcw size={24} />
           </button>
+          
           <button
-            onClick={() => handleModeChange('shortBreak')}
-            className={`py-2 rounded-md transition-colors ${mode === 'shortBreak' 
-              ? themeColors.shortBreak[theme].button + ' text-white' 
-              : (theme === 'dark' ? 'bg-gray-700 text-gray-200' : 'bg-gray-200 text-gray-700')}`}
+            onClick={skipToNext}
+            className="flex items-center justify-center w-12 h-12 rounded-full bg-blue-500 text-black shadow-md hover:bg-blue-600 transition-colors"
+            title="Skip to next"
           >
-            Short Break
-          </button>
-          <button
-            onClick={() => handleModeChange('longBreak')}
-            className={`py-2 rounded-md transition-colors ${mode === 'longBreak' 
-              ? themeColors.longBreak[theme].button + ' text-white' 
-              : (theme === 'dark' ? 'bg-gray-700 text-gray-200' : 'bg-gray-200 text-gray-700')}`}
-          >
-            Long Break
+            <SkipForward size={24} />
           </button>
         </div>
       </div>
       
-      {/* Timer Display */}
-      <div className="mb-6">
-        <div className="text-6xl font-bold text-center mb-4">
-          {formatTime(time)}
-        </div>
-        <Progress 
-          value={calculateProgress()} 
-          className={`h-2 ${themeColors[mode][theme].bg}`}
-          indicatorClassName={themeColors[mode][theme].indicator}
-        />
+      {/* Add the analytics component */}
+      <div className="container mx-auto px-4 py-8">
+        <PomodoroAnalytics />
       </div>
       
-      {/* Timer Controls */}
-      <div className="flex justify-center space-x-4 mb-6">
-        {!isActive ? (
-          <Button onClick={handleStart} className={`flex items-center space-x-1 ${themeColors[mode][theme].button}`}>
-            <PlayCircle className="w-5 h-5" />
-            <span>Start</span>
-          </Button>
-        ) : (
-          <Button onClick={handlePause} className="flex items-center space-x-1 bg-yellow-500 hover:bg-yellow-600">
-            <PauseCircle className="w-5 h-5" />
-            <span>Pause</span>
-          </Button>
-        )}
-        <Button onClick={handleReset} className="flex items-center space-x-1">
-          <RotateCcw className="w-5 h-5" />
-          <span>Reset</span>
-        </Button>
-        <Button onClick={toggleSound} className="p-2">
-          {soundMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
-        </Button>
-        <Button onClick={() => setShowSettings(!showSettings)} className="flex items-center space-x-1">
-          <Settings className="w-5 h-5" />
-          <span>Settings</span>
-        </Button>
-      </div>
-      
-      {/* Session Counter */}
-      <div className="flex justify-between items-center mb-4 text-gray-600 dark:text-gray-300">
-        <span>Sessions completed: {sessions}</span>
-        {sessions > 0 && (
-          <Button onClick={handleResetSessions} size="sm" variant="ghost" className="text-xs">
-            Reset
-          </Button>
-        )}
-      </div>
-      
-      {/* Settings Panel */}
+      {/* Settings modal */}
       {showSettings && (
-        <div className={`mt-6 p-4 border rounded-lg ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}`}>
-          <h3 className="font-semibold mb-4">Settings</h3>
-          
-          <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <label className={theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}>Pomodoro (minutes)</label>
-              <input
-                type="number"
-                min="1"
-                max="60"
-                value={settings.pomodoro}
-                onChange={(e) => handleSettingsChange('pomodoro', parseInt(e.target.value) || 25)}
-                className={`w-16 p-1 border rounded ${theme === 'dark' 
-                  ? 'bg-gray-700 border-gray-600 text-white' 
-                  : 'bg-white border-gray-300 text-gray-800'}`}
-              />
-            </div>
-            
-            <div className="flex justify-between items-center">
-              <label className={theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}>Short Break (minutes)</label>
-              <input
-                type="number"
-                min="1"
-                max="30"
-                value={settings.shortBreak}
-                onChange={(e) => handleSettingsChange('shortBreak', parseInt(e.target.value) || 5)}
-                className={`w-16 p-1 border rounded ${theme === 'dark' 
-                  ? 'bg-gray-700 border-gray-600 text-white' 
-                  : 'bg-white border-gray-300 text-gray-800'}`}
-              />
-            </div>
-            
-            <div className="flex justify-between items-center">
-              <label className={theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}>Long Break (minutes)</label>
-              <input
-                type="number"
-                min="1"
-                max="60"
-                value={settings.longBreak}
-                onChange={(e) => handleSettingsChange('longBreak', parseInt(e.target.value) || 15)}
-                className={`w-16 p-1 border rounded ${theme === 'dark' 
-                  ? 'bg-gray-700 border-gray-600 text-white' 
-                  : 'bg-white border-gray-300 text-gray-800'}`}
-              />
-            </div>
-            
-            <div className="flex justify-between items-center">
-              <label className={theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}>Long Break Interval</label>
-              <input
-                type="number"
-                min="1"
-                max="10"
-                value={settings.longBreakInterval}
-                onChange={(e) => handleSettingsChange('longBreakInterval', parseInt(e.target.value) || 4)}
-                className={`w-16 p-1 border rounded ${theme === 'dark' 
-                  ? 'bg-gray-700 border-gray-600 text-white' 
-                  : 'bg-white border-gray-300 text-gray-800'}`}
-              />
-            </div>
-            
-            <div className="flex justify-between items-center">
-              <label className={theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}>Auto-start Breaks</label>
-              <Switch
-                checked={settings.autoStartBreaks}
-                onCheckedChange={(checked) => handleSettingsChange('autoStartBreaks', checked)}
-              />
-            </div>
-            
-            <div className="flex justify-between items-center">
-              <label className={theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}>Auto-start Pomodoros</label>
-              <Switch
-                checked={settings.autoStartPomodoros}
-                onCheckedChange={(checked) => handleSettingsChange('autoStartPomodoros', checked)}
-              />
-            </div>
-            
-            <div className="flex justify-between items-center">
-              <label className={theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}>Notifications</label>
-              <Switch
-                checked={settings.notifications}
-                onCheckedChange={(checked) => handleSettingsChange('notifications', checked)}
-              />
-            </div>
-            
-            <div className="flex justify-between items-center">
-              <label className={theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}>Alarm Sound</label>
-              <select
-                value={settings.alarmSound}
-                onChange={(e) => handleSettingsChange('alarmSound', e.target.value)}
-                className={`p-1 border rounded ${theme === 'dark' 
-                  ? 'bg-gray-700 border-gray-600 text-white' 
-                  : 'bg-white border-gray-300 text-gray-800'}`}
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 w-full max-w-md">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200">Timer Settings</h2>
+              <button
+                onClick={() => setShowSettings(false)}
+                className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
               >
-                <option value="digital">Digital</option>
-                <option value="bell">Bell</option>
-                <option value="soft">Soft</option>
-              </select>
+                <X size={24} />
+              </button>
             </div>
-
-            {'Notification' in window && settings.notifications && Notification.permission !== 'granted' && (
-              <Button onClick={requestNotificationPermission} className="w-full mt-2 flex items-center justify-center space-x-1">
-                <Bell className="w-4 h-4" />
-                <span>Enable Notifications</span>
-              </Button>
-            )}
-          </div>
-        </div>
-      )}
-      
-      {/* Task History */}
-      {taskHistory.length > 0 && (
-        <div className={`mt-6 p-4 border rounded-lg ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}`}>
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="font-semibold">Task History</h3>
-            <Button onClick={handleClearTaskHistory} size="sm" variant="ghost" className="text-xs">
-              Clear History
-            </Button>
-          </div>
-          
-          <div className={`max-h-40 overflow-y-auto ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
-            {taskHistory.map((task, index) => (
-              <div key={index} className={`p-2 mb-2 rounded ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-100'}`}>
-                <div className="font-medium">{task.task}</div>
-                <div className="text-xs flex justify-between">
-                  <span>{formatDate(task.timestamp)}</span>
-                  <span>{task.duration} minutes</span>
+            
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <label className="text-gray-600 dark:text-gray-300">Focus Time (minutes)</label>
+                <input
+                  type="number"
+                  min="1"
+                  max="60"
+                  value={settings.focusTime}
+                  onChange={(e) => handleSettingChange('focusTime', e.target.value)}
+                  className="w-16 p-2 border rounded text-center dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                />
+              </div>
+              
+              <div className="flex justify-between items-center">
+                <label className="text-gray-600 dark:text-gray-300">Break Time (minutes)</label>
+                <input
+                  type="number"
+                  min="1"
+                  max="30"
+                  value={settings.breakTime}
+                  onChange={(e) => handleSettingChange('breakTime', e.target.value)}
+                  className="w-16 p-2 border rounded text-center dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                />
+              </div>
+              
+              <div className="flex justify-between items-center">
+                <label className="text-gray-600 dark:text-gray-300">Long Break Time (minutes)</label>
+                <input
+                  type="number"
+                  min="1"
+                  max="45"
+                  value={settings.longBreakTime}
+                  onChange={(e) => handleSettingChange('longBreakTime', e.target.value)}
+                  className="w-16 p-2 border rounded text-center dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                />
+              </div>
+              
+              <div className="flex justify-between items-center">
+                <label className="text-gray-600 dark:text-gray-300">Sessions before Long Break</label>
+                <input
+                  type="number"
+                  min="1"
+                  max="10"
+                  value={settings.cyclesBeforeLongBreak}
+                  onChange={(e) => handleSettingChange('cyclesBeforeLongBreak', e.target.value)}
+                  className="w-16 p-2 border rounded text-center dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                />
+              </div>
+              
+              <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+                <div className="flex items-center justify-between">
+                  <label className="text-gray-600 dark:text-gray-300">Sound notification</label>
+                  <div className="flex items-center">
+                    <button
+                      onClick={() => {
+                        setSoundEnabled(!soundEnabled);
+                        if (!soundEnabled) {
+                          playSound();
+                        }
+                      }}
+                      className={`px-4 py-2 rounded-md ${
+                        soundEnabled 
+                          ? 'bg-blue-500 text-white' 
+                          : 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
+                      }`}
+                    >
+                      {soundEnabled ? 'Enabled' : 'Disabled'}
+                    </button>
+                    {soundEnabled && (
+                      <button
+                        onClick={playSound}
+                        className="ml-2 p-2 rounded-md bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600"
+                        title="Test sound"
+                      >
+                        <Bell size={18} />
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
-            ))}
+            </div>
+            
+            <div className="mt-6 flex justify-end">
+              <button
+                onClick={() => setShowSettings(false)}
+                className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
+              >
+                Save Settings
+              </button>
+            </div>
           </div>
         </div>
       )}
+
+      {/* Login reminder */}
+      {!isAuthenticated && <LoginReminder />}
     </div>
   );
 };

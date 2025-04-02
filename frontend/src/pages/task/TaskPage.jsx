@@ -444,18 +444,20 @@ export default function TaskPage() {
             {/* View toggle buttons - Add the ref and make it fixed on scroll */}
             <div 
               ref={viewToggleRef}
-              className="bg-white dark:bg-gray-800 px-4 py-2 border-b border-gray-200 dark:border-gray-700"
+              className="flex flex-col justify-center  gap-3"
             >
-              <div className="flex justify-between rounded-lg p-1 bg-gray-100 dark:bg-gray-700">
+{/*               <div className="flex flex-col sm:flex-row justify-between gap-3"> */}
+              <div className="inline-flex rounded-lg bg-gray-100 dark:bg-gray-700 p-1 shadow-inner">
                 {viewOptions.map((option) => (
                   <button
                     key={option.id}
                     onClick={() => setViewMode(option.id)}
-                    className={`flex-1 flex flex-col items-center justify-center py-1.5 text-xs font-medium rounded-md transition-all ${
+                    className={`inline-flex bg-white items-center px-3 py-1.5 rounded-md text-sm transition-all ${
                       viewMode === option.id
-                        ? 'text-white shadow-sm' 
-                        : 'text-gray-700 dark:text-gray-300'
+                        ? ' shadow-sm font-medium'
+                        : ''
                     }`}
+                  
                     style={{ 
                       backgroundColor: viewMode === option.id ? 
                         `var(--${option.color.split('-')[1]}-${option.color.split('-')[2]})` : ''
