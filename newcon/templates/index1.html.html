@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FILE CONVERTER - Easy File Conversions</title>
+    <link rel="stylesheet" href="styles.css">
+    
+</head>
+<body>
+    <header>
+        <div class="container">
+            <nav class="navbar">
+                <div class="logo">
+                    <div class="logo-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3Z"/>
+                        </svg>
+                    </div>
+                    <span>FILE CONVERTER</span>
+                </div>
+                <div class="menu">
+                    <a href="#" class="menu-item active">Home</a>
+                    <a href="#" class="menu-item">Features</a>
+                    <a href="#" class="menu-item">Supported Formats</a>
+                    <a href="#" class="menu-item">About</a>
+                </div>
+            </nav>
+        </div>
+    </header>
+    
+    <main class="container">
+        <section class="hero">
+            <h1>Convert Your Files with Ease</h1>
+            <p>A simple, fast and free solution to convert your files to any format. No registration required.</p>
+        </section>
+        
+        <section class="converter-container">
+            <div class="tabs">
+                <button class="tab active">Image Converter</button>
+                <button class="tab">PDF Converter</button>
+                <button class="tab">Document Converter</button>
+                <button class="tab">Audio Converter</button>
+                <button class="tab">Video Converter</button>
+                <button class="tab">Archive Converter</button>
+            </div>
+            
+            <div class="converter-content">
+                <div class="drop-area" id="dropArea">
+                    <div class="drop-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 22v-9"/>
+                            <path d="M12 13L9 16"/>
+                            <path d="M12 13l3 3"/>
+                            <path d="M9 2H5a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9l-7-7Z"/>
+                            <path d="M9 2v5a2 2 0 0 0 2 2h5"/>
+                        </svg>
+                    </div>
+                    <div class="drop-text">
+                        <h3>Drag and drop files here</h3>
+                        <p>Support for JPG, PNG, GIF, BMP, TIFF and more</p>
+                        <button class="browse-btn">Browse Files</button>
+                    </div>
+                </div>
+                
+                <div class="format-selector">
+                    <span class="format-label">Convert to:</span>
+                    <select class="format-select">
+                        <option value="png">PNG - Portable Network Graphics</option>
+                        <option value="jpg">JPG - JPEG Image</option>
+                        <option value="webp">WEBP - Web Picture Format</option>
+                        <option value="gif">GIF - Graphics Interchange Format</option>
+                        <option value="bmp">BMP - Bitmap Image File</option>
+                        <option value="tiff">TIFF - Tagged Image File Format</option>
+                    </select>
+                </div>
+                
+                <button class="convert-btn" disabled id="convertBtn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 16.5v-9"/>
+                        <path d="M7 21h10"/>
+                        <path d="M17 7V4a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v16"/>
+                        <path d="M21 12h-8a1 1 0 0 0-1 1v8"/>
+                        <path d="m6 10 8 8"/>
+                        <path d="m22 16-8-8"/>
+                    </svg>
+                    Convert Now
+                </button>
+                
+                <div class="progress-bar" id="progressBar">
+                    <div class="progress-bar-fill" id="progressBarFill"></div>
+                </div>
+                
+                <div class="file-list" id="fileList">
+                    <!-- File items will be added here via JavaScript -->
+                </div>
+            </div>
+        </section>
+        
+        <section class="features">
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 22a9.97 9.97 0 0 0 7.071-2.929A9.97 9.97 0 0 0 22 12a9.97 9.97 0 0 0-2.929-7.071A9.97 9.97 0 0 0 12 2a9.97 9.97 0 0 0-7.071 2.929A9.97 9.97 0 0 0 2 12a9.97 9.97 0 0 0 2.929 7.071A9.97 9.97 0 0 0 12 22Z"/>
+                        <path d="m9 15 6-6"/>
+                        <path d="M10 9h5v5"/>
+                    </svg>
+                </div>
+                <h3>Fast Conversion</h3>
+                <p>Convert your files at lightning speed with our optimized processing engine.</p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 5a2 2 0 1 0-4 0c0 2 4 2 4 6a2 2 0 1 1-4 0"/>
+                        <path d="M8 5a2 2 0 1 0-4 0c0 2 4 2 4 6a2 2 0 1 1-4 0"/>
+                        <path d="M16 15a2 2 0 1 0-4 0c0 2 4 2 4 6a2 2 0 1 1-4 0"/>
+                    </svg>
+                </div>
+                <h3>Multiple Formats</h3>
+                <p>Support for a wide range of file formats including images, PDFs, documents, audio, and more.</p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/>
+                        <path d="m9 12 2 2 4-4"/>
+                    </svg>
+                </div>
+                <h3>Secure Processing</h3>
+                <p>Your files are processed securely and privately on your own device without uploading to any server.</p>
+            </div>
+        </section>
+    </main>
+    
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-logo">File Converter</div>
+                <div class="footer-links">
+                    <a href="#" class="footer-link">Privacy Policy</a>
+                    <a href="#" class="footer-link">Terms of Service</a>
+                    <a href="#" class="footer-link">Contact Us</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <div class="toast" id="toast">
+        <div class="toast-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z"></path>
+                <path d="M12 8v4"></path>
+                <path d="M12 16h.01"></path>
+            </svg>
+        </div>
+        <div class="toast-content">
+            <h4 id="toastTitle">Notification</h4>
+            <p id="toastMessage">This is a notification message.</p>
+        </div>
+        <button class="toast-close" id="toastClose">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+        </button>
+    </div>
+</body>
+   
+                    

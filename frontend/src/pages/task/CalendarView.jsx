@@ -66,7 +66,7 @@ const getStatusText = (status) => {
   }
 };
 
-// Enhanced EventDetailModal with improved UI for both modes
+// Enhanced EventDetailModal with centered positioning for all screen sizes
 const EventDetailModal = ({ event, onClose, onEdit }) => {
   const task = event.extendedProps;
   const dueDate = event.start ? moment(event.start).format("LLL") : "No due date";
@@ -74,30 +74,31 @@ const EventDetailModal = ({ event, onClose, onEdit }) => {
   
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fadeIn p-4">
-      {/* Modal content - add max-height constraint and flex column layout */}
-      <div className="relative z-50 bg-white dark:bg-gray-800 rounded-lg shadow-2xl max-w-md w-full animate-scaleIn 
-                    flex flex-col max-h-[calc(100vh-2rem)]"> {/* Add max height and flex */}
+      {/* Modal content - centered on all screen sizes with proper max-height */}
+      <div className="relative z-50 bg-white dark:bg-gray-800 rounded-lg shadow-2xl w-full sm:max-w-md animate-scaleIn 
+                    flex flex-col max-h-[85vh] sm:max-h-[80vh]">
         {/* Header - fixed at top */}
-        <div className="bg-gray-50 dark:bg-gray-800 px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between flex-shrink-0">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex-1">
+        <div className="bg-gray-50 dark:bg-gray-800 px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between flex-shrink-0 rounded-t-lg">
+          <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white flex-1">
             Task Details
           </h3>
           <button
             onClick={onClose}
-            className="p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 transition-colors"
+            className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 transition-colors"
+            aria-label="Close"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
         
-        {/* Content - now scrollable */}
-        <div className="px-6 py-4 bg-white dark:bg-gray-800 overflow-y-auto flex-grow">
-          <div className="mb-4">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+        {/* Content - now scrollable with better spacing for mobile */}
+        <div className="px-4 sm:px-6 py-3 sm:py-4 bg-white dark:bg-gray-800 overflow-y-auto flex-grow">
+          <div className="mb-3 sm:mb-4">
+            <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-2">
               {event.title}
             </h2>
             
-            <div className="flex flex-wrap gap-2 mt-3">
+            <div className="flex flex-wrap gap-2 mt-2 sm:mt-3">
               <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${statusClasses[task.status]}`}>
                 {statusIcons[task.status]}
                 {getStatusText(task.status)}
@@ -110,10 +111,10 @@ const EventDetailModal = ({ event, onClose, onEdit }) => {
             </div>
           </div>
           
-          {/* Due date */}
-          <div className="mb-4">
-            <div className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Due Date</div>
-            <div className={`text-base ${isPastDue ? 'text-red-600 dark:text-red-400 font-medium' : 'text-gray-900 dark:text-gray-100'}`}>
+          {/* Due date with better mobile spacing */}
+          <div className="mb-3 sm:mb-4">
+            <div className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Due Date</div>
+            <div className={`text-sm sm:text-base ${isPastDue ? 'text-red-600 dark:text-red-400 font-medium' : 'text-gray-900 dark:text-gray-100'}`}>
               <Clock className="w-4 h-4 inline-block mr-1 opacity-70" />
               {dueDate}
               {isPastDue && " (Overdue)"}
@@ -122,21 +123,21 @@ const EventDetailModal = ({ event, onClose, onEdit }) => {
           
           {/* Description - now will scroll if too long */}
           {task.description && (
-            <div className="mb-4">
-              <div className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Description</div>
-              <p className="text-gray-800 dark:text-gray-200 text-sm whitespace-pre-wrap">
+            <div className="mb-3 sm:mb-4">
+              <div className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Description</div>
+              <p className="text-gray-800 dark:text-gray-200 text-xs sm:text-sm whitespace-pre-wrap">
                 {task.description}
               </p>
             </div>
           )}
           
-          {/* Additional metadata */}
-          <div className="grid grid-cols-2 gap-4 mt-4">
+          {/* Additional metadata in single column for mobile */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mt-3 sm:mt-4">
             {task.category && (
               <div>
-                <div className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Category</div>
-                <div className="flex items-center text-gray-800 dark:text-gray-200">
-                  <Tag className="w-4 h-4 mr-1 opacity-70" />
+                <div className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Category</div>
+                <div className="flex items-center text-gray-800 dark:text-gray-200 text-xs sm:text-sm">
+                  <Tag className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 opacity-70" />
                   {task.category}
                 </div>
               </div>
@@ -144,9 +145,9 @@ const EventDetailModal = ({ event, onClose, onEdit }) => {
             
             {task.assigned_to && (
               <div>
-                <div className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Assigned To</div>
-                <div className="flex items-center text-gray-800 dark:text-gray-200">
-                  <User className="w-4 h-4 mr-1 opacity-70" />
+                <div className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Assigned To</div>
+                <div className="flex items-center text-gray-800 dark:text-gray-200 text-xs sm:text-sm">
+                  <User className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 opacity-70" />
                   {task.assigned_to}
                 </div>
               </div>
@@ -154,11 +155,11 @@ const EventDetailModal = ({ event, onClose, onEdit }) => {
           </div>
         </div>
         
-        {/* Actions - fixed at bottom */}
-        <div className="px-6 py-3 bg-gray-50 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 flex justify-end flex-shrink-0">
+        {/* Actions - fixed at bottom with larger touch targets */}
+        <div className="px-4 sm:px-6 py-3 sm:py-4 bg-gray-50 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 flex justify-end flex-shrink-0">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-sm border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md mr-2 hover:bg-gray-100 dark:hover:bg-gray-700"
+            className="px-4 py-2.5 text-sm border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md mr-2 hover:bg-gray-100 dark:hover:bg-gray-700"
           >
             Close
           </button>
@@ -167,12 +168,24 @@ const EventDetailModal = ({ event, onClose, onEdit }) => {
               onEdit(task);
               onClose();
             }}
-            className="px-4 py-2 text-sm bg-indigo-600 hover:bg-indigo-700 text-white rounded-md"
+            className="px-4 py-2.5 text-sm bg-indigo-600 hover:bg-indigo-700 text-white rounded-md"
           >
             Edit Task
           </button>
         </div>
       </div>
+
+      {/* Update animation styles */}
+      <style jsx global>{`
+        @keyframes scaleIn {
+          from { transform: scale(0.95); opacity: 0; }
+          to { transform: scale(1); opacity: 1; }
+        }
+        
+        .animate-scaleIn {
+          animation: scaleIn 0.2s ease-out forwards;
+        }
+      `}</style>
     </div>
   );
 };
@@ -1082,7 +1095,7 @@ const injectCalendarStyles = () => {
       
       /* Minimize padding */
       .fc .fc-daygrid-day-frame {
-        padding: 1px !important;
+        padding: 2px !important;
         min-height: 3rem !important;
       }
       
@@ -1211,6 +1224,106 @@ const injectCalendarStyles = () => {
       
       .upcoming-tasks-mobile .task-description {
         font-size: 0.7rem !important;
+      }
+    }
+
+    /* Consistent "more" events handling for all screen sizes */
+    .fc-daygrid-more-link {
+      background-color: rgba(99, 102, 241, 0.1) !important;
+      border-radius: 4px !important;
+      padding: 1px 4px !important;
+      margin-top: 1px !important;
+      font-size: 0.75rem !important;
+      text-align: center !important;
+      display: block !important;
+      color: #4f46e5 !important;
+    }
+    
+    .dark .fc-daygrid-more-link {
+      background-color: rgba(99, 102, 241, 0.2) !important;
+      color: #818cf8 !important;
+    }
+    
+    /* Consistent event popover styling across all screen sizes */
+    .fc-more-popover {
+      border-radius: 0.5rem !important;
+      overflow: hidden !important;
+      border: 1px solid #e5e7eb !important;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+      max-width: 300px !important;
+      max-height: 400px !important;
+    }
+    
+    .dark .fc-more-popover {
+      background-color: #1f2937 !important;
+      border-color: #374151 !important;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.18) !important;
+    }
+    
+    .fc-popover-header {
+      padding: 0.5rem !important;
+      font-weight: 600 !important;
+      background: #f3f4f6 !important;
+      color: #1f2937 !important;
+    }
+    
+    .dark .fc-popover-header {
+      background: #374151 !important;
+      color: #f9fafb !important;
+    }
+    
+    .fc-popover-body {
+      padding: 0.5rem !important;
+      max-height: 300px !important;
+      overflow-y: auto !important;
+    }
+    
+    /* Ensure consistent event styling in popovers */
+    .fc-popover-body .fc-daygrid-event {
+      margin: 2px 0 !important;
+      padding: 3px 6px !important;
+      border-radius: 4px !important;
+    }
+    
+    /* Unified event appearance regardless of view or screen size */
+    .fc-event {
+      border-radius: 4px !important;
+      padding: 2px 4px !important;
+      margin: 1px 0 !important;
+      border: none !important;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
+      overflow: hidden !important;
+    }
+    
+    .fc-event-title {
+      font-weight: 500 !important;
+      white-space: nowrap !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+      display: block !important;
+      font-size: 0.75rem !important;
+    }
+    
+    /* Force events to not get too wide on large screens */
+    .fc-daygrid-event-harness {
+      max-width: 100% !important;
+      margin-left: 0 !important;
+      margin-right: 0 !important;
+    }
+    
+    /* Make day cell events container respect its boundaries */
+    .fc-daygrid-day-events {
+      min-height: 0 !important;
+      padding-top: 1px !important;
+      padding-bottom: 1px !important;
+    }
+    
+    /* Remove large media queries and apply consistent styling */
+    @media screen {
+      .fc-daygrid-event {
+        font-size: 0.75rem !important;
+        line-height: 1.2 !important;
+        max-width: 100% !important;
       }
     }
   `;

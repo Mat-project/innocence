@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { MessageSquare } from 'lucide-react';
 
 const NavItem = ({ to, children, icon }) => {
   const location = useLocation();
@@ -113,6 +114,14 @@ const Navigation = () => {
         }
       >
         Code Editor
+      </NavItem>
+      <NavItem
+        to="/chat"
+        icon={
+          <MessageSquare className="w-5 h-5" />
+        }
+      >
+        Chat
       </NavItem>
     </nav>
   );

@@ -6,8 +6,7 @@ export default function ProfileInfoModal({ isOpen, onClose, initialData, onSave 
     email: "",
     country: "",
     phone: "",
-    country: "",
-/*     visibility: "only-me", */
+    visibility: "only-me",
     bio: "",
   };
 
@@ -49,7 +48,7 @@ export default function ProfileInfoModal({ isOpen, onClose, initialData, onSave 
               <label className="block">Country</label>
               <select
                 value={formData.country}
-                onChange={(e) => handleChange("country", e.target.value)}
+
                 className="w-full p-2 border rounded dark:bg-gray-700 dark:text-white"
               >
                 <option value="">Select country</option>

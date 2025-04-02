@@ -19,6 +19,9 @@ export const AuthProvider = ({ children }) => {
       const token = localStorage.getItem('accessToken');
       if (token) {
         const response = await authAPI.getProfile();
+        if (response.data && response.data.id) {
+          localStorage.setItem('userId', response.data.id);
+        }
         setUser(response.data);
         setIsAuthenticated(true);
       } else {
@@ -43,9 +46,12 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem('refreshToken', refresh);
       setUser(userData);
       setIsAuthenticated(true);
-      
+      if (response.data.user && response.data.user.id) {
+        localStorage.setItem('userId', response.data.user.id);
+      }
       navigate('/dashboard');
       return { success: true };
+      
     } catch (error) {
       console.error('Login failed:', error);
       setIsAuthenticated(false);
@@ -71,7 +77,9 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem('refreshToken', tokens.refresh);
       setUser(newUser);
       setIsAuthenticated(true);
-      
+      if (response.data.user && response.data.user.id) {
+        localStorage.setItem('userId', response.data.user.id);
+      }
       navigate('/dashboard');
       return { success: true };
     } catch (error) {
@@ -106,11 +114,12 @@ export const AuthProvider = ({ children }) => {
     login,
     register,
     logout,
+    refreshUserData: checkAuth,
   };
 
   return (
     <AuthContext.Provider value={value}>
-      {children}
+      {!isLoading ? children : <div>Loading...</div>}
     </AuthContext.Provider>
   );
 };

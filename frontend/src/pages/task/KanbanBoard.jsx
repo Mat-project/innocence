@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from "react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { 
   AlertCircle, Clock, ChevronDown, ChevronUp, X, Filter, Plus,
-  MoreVertical, Edit, Trash2, CheckCircle, Calendar as CalendarIcon 
+  MoreVertical, Edit, Trash2, CheckCircle, Calendar as CalendarIcon,
+  Circle // Added Circle for To Do icon
 } from "lucide-react";
 import moment from "moment";
 import { taskAPI } from "../../service/api";
@@ -324,7 +325,7 @@ export default function KanbanBoard({ tasks = [], onTasksChanged, refreshFlag })
         </div>
       )}
       
-      {/* Mobile column navigation */}
+      {/* Mobile column navigation with icons and hover tooltips */}
       {(viewMode === "mobile" || viewMode === "tablet") && (
         <div className="flex justify-center mb-3 sm:mb-4">
           <div className="inline-flex rounded-md shadow-sm" role="group">
@@ -337,7 +338,7 @@ export default function KanbanBoard({ tasks = [], onTasksChanged, refreshFlag })
                     inline: 'start'
                   });
                 }}
-                className={`px-2 sm:px-4 py-1 sm:py-2 text-xs sm:text-sm font-medium
+                className={`group relative px-2 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium flex items-center justify-center
                   ${columnId === 'todo' ? 'rounded-l-lg' : ''} 
                   ${columnId === 'completed' ? 'rounded-r-lg' : ''}
                   ${columnId === 'todo' ? 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300' : ''}
@@ -346,7 +347,25 @@ export default function KanbanBoard({ tasks = [], onTasksChanged, refreshFlag })
                   border border-gray-200 dark:border-gray-600
                 `}
               >
-                {column.title} <span className="text-xs">({column.items.length})</span>
+                {/* Icon for extra small screens with hover tooltip */}
+                <span className="sm:hidden relative">
+                  {columnId === 'todo' && <Circle className="w-5 h-5" />}
+                  {columnId === 'inprogress' && <AlertCircle className="w-5 h-5" />}
+                  {columnId === 'completed' && <CheckCircle className="w-5 h-5" />}
+                  <span className="text-[10px] leading-none">
+                    {column.items.length}
+                  </span>
+                  
+                  {/* Tooltip that appears on hover */}
+                  <span className="kanban-tooltip group-hover:opacity-100">
+                    {column.title}
+                  </span>
+                </span>
+                
+                {/* Text for sm screens and above */}
+                <span className="hidden sm:inline">
+                  {column.title} <span className="text-xs">({column.items.length})</span>
+                </span>
               </button>
             ))}
           </div>
@@ -361,16 +380,17 @@ export default function KanbanBoard({ tasks = [], onTasksChanged, refreshFlag })
               <div 
                 key={columnId} 
                 id={`column-${columnId}`} 
-                className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm"
+                className="flex flex-col bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm"
+                style={{ height: "fit-content" }}
               >
                 {/* Column header */}
                 <div className={`p-2 sm:p-3 flex items-center justify-between border-b border-gray-200 dark:border-gray-700
                   ${columnId === 'inprogress' ? 'bg-blue-50 dark:bg-blue-900/20' : ''}
                   ${columnId === 'completed' ? 'bg-green-50 dark:bg-green-900/20' : ''}
                 `}>
-                  <h3 className="text-sm sm:text-base font-medium text-gray-900 dark:text-white flex items-center">
+                  <div className="text-xs md:text-sm lg:text-md font-medium text-gray-900 dark:text-white flex items-center">
                     {columnId === 'todo' && (
-                      <Clock className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 text-gray-500 dark:text-gray-400" />
+                      <Circle className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 text-gray-500 dark:text-gray-400" />
                     )}
                     {columnId === 'inprogress' && (
                       <AlertCircle className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 text-blue-500 dark:text-blue-400" />
@@ -383,7 +403,7 @@ export default function KanbanBoard({ tasks = [], onTasksChanged, refreshFlag })
                     <span className="ml-1 sm:ml-2 text-xs px-1.5 sm:px-2 py-0.5 bg-white dark:bg-gray-700 rounded-full text-gray-500 dark:text-gray-400">
                       {column.items.length}
                     </span>
-                  </h3>
+                  </div>
                   
                   <div className="flex gap-1">
                     <button
@@ -576,6 +596,31 @@ export default function KanbanBoard({ tasks = [], onTasksChanged, refreshFlag })
           </div>
         </div>
       )}
+
+      {/* Add the tooltip styles */}
+      <style jsx global>{`
+        /* Tooltip styles */
+        .kanban-tooltip {
+          position: absolute;
+          top: -28px;
+          left: 50%;
+          transform: translateX(-50%);
+          background-color: rgba(0, 0, 0, 0.8);
+          color: white;
+          padding: 3px 8px;
+          border-radius: 4px;
+          font-size: 10px;
+          white-space: nowrap;
+          opacity: 0;
+          transition: opacity 0.2s;
+          z-index: 50;
+          pointer-events: none;
+        }
+        
+        .group:hover .kanban-tooltip {
+          opacity: 1;
+        }
+      `}</style>
     </div>
   );
 }

@@ -1,28 +1,25 @@
 """
 URL configuration for backend project.
-
-The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/5.1/topics/http/urls/
-Examples:
-Function views
-    1. Add an import:  from my_app import views
-    2. Add a URL to urlpatterns:  path('', views.home, name='home')
-Class-based views
-    1. Add an import:  from other_app.views import Home
-    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
-Including another URLconf
-    1. Import the include() function: from django.urls import include, path
-    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
 from django.urls import path, include
+from django.conf import settings
+from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    
+    # Include API routes - remove duplicates and direct_urls
     path('api/', include('api.urls')),
-    path('api/tasks/', include('task.urls')),  # Include task routes here
-    path('api/notifications/', include('notification.urls')),  # added notifications
-    path('api/file/', include('file.urls')),  # Include file app URLs under the "api/" prefix
-    path('api/', include('code_editor.urls')),  # Include code_editor app URLs under the "api/" prefix
-   
+    
+    # Other API endpoints with more specific paths to avoid conflicts
+    path('api/tasks/', include('task.urls')),
+    path('api/notifications/', include('notification.urls')),
+    path('api/file/', include('file.urls')),
+    path('api/code/', include('code_editor.urls')),  # Use specific prefix
+    path('api/chat/', include('chat.urls')),
 ]
+
+# Add media URL configuration
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

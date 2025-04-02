@@ -27,6 +27,15 @@ const UserMenu = () => {
     }
   };
 
+/*   const profileLink = user?.username ? `/${user.username}` : '/profile';
+
+  const isActive = (path) => {
+    if (path === profileLink && location.pathname === profileLink) {
+      return true;
+    }
+    return location.pathname === path;
+  }; */
+
   return (
     <div className="relative" ref={menuRef}>
       <button

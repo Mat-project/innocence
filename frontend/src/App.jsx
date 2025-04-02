@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import LoginForm from './component/auth/LoginForm';
 import RegisterForm from './component/auth/RegisterForm';
 import DashboardLayout from './component/layout/DashboardLayout';
@@ -16,10 +17,16 @@ import HabitTracker from './pages/HabitTracker/HabitTracker';
 import PomodoroTimer from './pages/PomodoroTimer/PomodoroTimer';
 
 import CodeEditorPage from './pages/CodeEditor/CodeEditorPage'; 
-import CodeEditorFeature from './pages/CodeEditor/CodeEditorFeature';     
-
+import CodeEditorFeature from './pages/CodeEditor/CodeEditorFeature';  
+import MobileTaskPage from './pages/task/MobileTaskPage';
+import ResponsiveTaskManager from './pages/task/ResponsiveTaskManager';
+import ChatPage from './pages/Chat/ChatPage';
+import ResetPassword from './pages/ResetPassword';
+import Chat from './pages/Chat/fuck/Chat';
 
 // Protected Route component
+
+const queryClient = new QueryClient()
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated, isLoading } = useAuth();
   
@@ -32,7 +39,7 @@ const ProtectedRoute = ({ children }) => {
   }
   
   if (!isAuthenticated) {
-    return <Navigate to="/landing" />;
+    return <Navigate to="/login" />;
   }
   
   return children;
@@ -42,6 +49,7 @@ function App() {
   return (
     <Router>
       <ThemeProvider>
+      <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <Routes>
             {/* Public routes */}
@@ -56,10 +64,12 @@ function App() {
                 <RegisterForm />
               </AuthLayout>
             } />
+            <Route path="/reset-password/:uid/:token" element={<ResetPassword />} />
             
             {/* Protected Routes */}
             <Route path="/" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
               <Route path="dashboard" element={<Dashboard />} />
+              {/*<Route path="tasks" element={<ResponsiveTaskManager />} />*/}
               <Route path="tasks" element={<TaskPage />} />
               <Route path="notifications" element={<NotificationsPage />} />
               <Route path="profile" element={<ProfilePage />} />
@@ -68,12 +78,16 @@ function App() {
               <Route path="habit-tracker" element={<HabitTracker />} />
               <Route path="pomodoro-timer" element={<PomodoroTimer />} />
               <Route path="/code-editor/*" element={<CodeEditorFeature />} />
+              <Route path="/chat" element={<ChatPage />} />
+              <Route path="/chatf" element={<Chat />} />
+{/*               <Toaster position="top-right" /> */}
             </Route>
 
             {/* Catch-all route for 404 */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </AuthProvider>
+        </QueryClientProvider>
       </ThemeProvider>
     </Router>
   );

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Button } from '../../component/ui/button';
-import { Switch } from '../../component/ui/switch';
-import { Progress } from '../../component/ui/progress';
+import { Button } from '@components/ui/button';
+import { Switch } from '@components/ui/switch';
+import { Progress } from '@components/ui/progress';
 import { Bell, PauseCircle, PlayCircle, RotateCcw, Settings, Volume2, VolumeX } from 'lucide-react';
 
 const PomodoroTimer = () => {

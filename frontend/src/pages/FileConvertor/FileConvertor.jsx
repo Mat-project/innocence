@@ -12,6 +12,7 @@ import {
   Loader, 
   X
 } from "lucide-react";
+import fileConvertorAPI from "../../service/fileConvertorAPI";
 
 const conversionOptions = [
   {
@@ -115,51 +116,29 @@ export default function FileConverter() {
     formData.append("conversion_type", selectedConversion.id);
     
     try {
-      // Use the full URL to your Django backend
-      const BACKEND_URL = "http://localhost:8000";
-      
-      const response = await axios.post(`${BACKEND_URL}/api/file/convert/`, formData, {
-        onUploadProgress: (progressEvent) => {
-          const percentCompleted = Math.round(
-            (progressEvent.loaded * 100) / progressEvent.total
-          );
-          setProgress(percentCompleted);
-        },
-        responseType: "blob",
-        headers: {
-          "Content-Type": "multipart/form-data"
-        }
+      const response = await fileConvertorAPI.convertFile(formData, (progressEvent) => {
+        const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+        setProgress(percentCompleted);
       });
       
-      // Create a blob URL for downloading
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      
-      // Create filename based on original filename
-      const filenameParts = file.name.split('.');
-      filenameParts.pop(); // Remove extension
-      const filename = `${filenameParts.join('.')}.${selectedConversion.targetExt.split('/')[0]}`;
-      
-      // Create download link
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', filename);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      
-      setStatus("success");
+      // Now expect a JSON response with file_url
+      const fileUrl = response.data.file_url;
+      if (fileUrl) {
+        // Open the file URL in a new tab (or trigger download programmatically)
+        window.open(fileUrl, '_blank');
+        setStatus("success");
+      } else {
+        throw new Error("No file URL returned from conversion.");
+      }
     } catch (error) {
       console.error("Conversion error:", error);
       setError("Conversion failed. Please try again later.");
       setStatus("error");
     } finally {
-      // Set status back to idle after a delay so user can see success/error message
-      setTimeout(() => {
-        if (status !== "error") {
-          setStatus("idle");
-        }
-      }, 3000);
       setProgress(100);
+      setTimeout(() => {
+        if (status !== "error") setStatus("idle");
+      }, 3000);
     }
   };
   

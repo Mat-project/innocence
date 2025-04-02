@@ -1,7 +1,6 @@
 import React from 'react';
 import FileConvertor from './FileConvertor';
 import { useTheme } from '../../context/ThemeContext';
-import { Moon, Sun } from 'lucide-react';
 
 export default function FileConverterPage() {
   const { theme, toggleTheme } = useTheme();
