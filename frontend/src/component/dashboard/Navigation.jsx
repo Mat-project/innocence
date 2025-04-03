@@ -100,19 +100,19 @@ const Navigation = () => {
           <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16m-7 6h7" />
           </svg>
-          <span className="text-sm font-medium">Project Section</span>
+          <span className="text-sm font-medium">Team Collab</span>
         </button>
         {isProjectSectionOpen && (
           <div className="ml-6 mt-2 space-y-1">
             <NavItem
-              to="/projects"
+              to="/chat"
               icon={
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
                 </svg>
               }
             >
-              Projects
+              Chat
             </NavItem>
           </div>
         )}

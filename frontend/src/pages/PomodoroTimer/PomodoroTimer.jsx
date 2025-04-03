@@ -340,7 +340,7 @@ const PomodoroTimer = () => {
           {!isActive ? (
             <button
               onClick={toggleTimer}
-              className="flex items-center justify-center w-12 h-12 rounded-full bg-green-500 text-black shadow-md hover:bg-green-600 transition-colors"
+              className="flex items-center justify-center w-12 h-12 rounded-full bg-green-500 text-black dark:text-white shadow-md hover:bg-green-600 transition-colors"
               title="Start"
             >
               <Play size={24} />
@@ -348,7 +348,7 @@ const PomodoroTimer = () => {
           ) : (
             <button
               onClick={toggleTimer}
-              className="flex items-center justify-center w-12 h-12 rounded-full bg-yellow-500 text-white shadow-md hover:bg-yellow-600 transition-colors"
+              className="flex items-center justify-center w-12 h-12 rounded-full bg-yellow-500 text-black dark:text-white shadow-md hover:bg-yellow-600 transition-colors"
               title="Pause"
             >
               <Pause size={24} />
@@ -357,7 +357,7 @@ const PomodoroTimer = () => {
           
           <button
             onClick={resetTimer}
-            className="flex items-center justify-center w-12 h-12 rounded-full bg-gray-300 text-gray-700 shadow-md hover:bg-gray-400 transition-colors dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+            className="flex items-center justify-center w-12 h-12 rounded-full bg-gray-300 text-black dark:text-white shadow-md hover:bg-gray-400 transition-colors dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
             title="Reset"
           >
             <RotateCcw size={24} />
@@ -365,7 +365,7 @@ const PomodoroTimer = () => {
           
           <button
             onClick={skipToNext}
-            className="flex items-center justify-center w-12 h-12 rounded-full bg-blue-500 text-black shadow-md hover:bg-blue-600 transition-colors"
+            className="flex items-center justify-center w-12 h-12 rounded-full bg-blue-500 text-black dark:text-white shadow-md hover:bg-blue-600 transition-colors"
             title="Skip to next"
           >
             <SkipForward size={24} />

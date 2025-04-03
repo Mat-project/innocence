@@ -368,7 +368,7 @@ const PomodoroAnalytics = () => {
             onClick={() => setTimeframe('day')}
             className={`px-3 py-1 rounded-full text-sm ${
               timeframe === 'day' 
-                ? 'bg-blue-500 text-white' 
+                ? 'bg-blue-500 text-black dark:text-white' 
                 : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
             }`}
           >
@@ -378,7 +378,7 @@ const PomodoroAnalytics = () => {
             onClick={() => setTimeframe('week')}
             className={`px-3 py-1 rounded-full text-sm ${
               timeframe === 'week' 
-                ? 'bg-blue-500 text-white' 
+                ? 'bg-blue-500 text-black dark:text-white' 
                 : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
             }`}
           >
@@ -388,7 +388,7 @@ const PomodoroAnalytics = () => {
             onClick={() => setTimeframe('month')}
             className={`px-3 py-1 rounded-full text-sm ${
               timeframe === 'month' 
-                ? 'bg-blue-500 text-white' 
+                ? 'bg-blue-500 text-black dark:text-white' 
                 : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
             }`}
           >
@@ -398,7 +398,7 @@ const PomodoroAnalytics = () => {
             onClick={() => setTimeframe('year')}
             className={`px-3 py-1 rounded-full text-sm ${
               timeframe === 'year' 
-                ? 'bg-blue-500 text-white' 
+                ? 'bg-blue-500 text-black dark:text-white' 
                 : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
             }`}
           >

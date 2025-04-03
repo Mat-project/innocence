@@ -476,7 +476,7 @@ const HabitTracker = () => {
             onClick={() => setYearView(!yearView)}
             className={`flex items-center px-3 py-2 text-sm font-medium rounded-md ${
               yearView
-                ? 'bg-indigo-600 text-white hover:bg-indigo-700'
+                ? 'bg-indigo-600 text-black dark:text-white hover:bg-indigo-700'
                 : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600'
             } transition-colors duration-200`}
           >
@@ -552,7 +552,7 @@ const HabitTracker = () => {
 
           <button
             onClick={addHabit}
-            className="flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-md transition-colors"
+            className="flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-black dark:text-white font-medium rounded-md transition-colors"
           >
             <Plus className="h-4 w-4 mr-1" />
             Add Habit

@@ -306,7 +306,7 @@ const NotepadPage = () => {
                 </h1>
                 <button
                   onClick={handleCreateNote}
-                  className="p-2 bg-indigo-500 text-white rounded-full hover:bg-indigo-600 transition-colors"
+                  className="p-2 bg-indigo-500 text-black dark:text-white rounded-full hover:bg-indigo-600 transition-colors"
                   title="Create new note"
                 >
                   <Plus size={20} />

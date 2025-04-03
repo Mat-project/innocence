@@ -205,7 +205,7 @@ const CodeEditor = ({
         <div className="flex space-x-2">
           <button
             onClick={toggleTheme}
-            className="py-1 px-2 text-xs bg-gray-700 hover:bg-gray-600 text-gray-200 rounded"
+            className="py-1 px-2 text-xs bg-black hover:bg-gray-600 text-gray-200 rounded"
             title="Toggle light/dark theme"
           >
             {theme === 'vs-dark' ? 'Light' : 'Dark'} Theme
