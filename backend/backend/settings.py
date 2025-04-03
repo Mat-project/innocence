@@ -95,9 +95,9 @@ ASGI_APPLICATION = 'backend.asgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'TV',
+        'NAME': 'innocence',
         'USER': 'postgres',
-        'PASSWORD': 'MADH@2006',
+        'PASSWORD': 'bangban4120D',
         'HOST': 'localhost',
         'PORT': '5432',
     }
