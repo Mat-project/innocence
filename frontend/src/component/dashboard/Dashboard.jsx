@@ -7,6 +7,7 @@ import {
   ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip, Legend, 
   AreaChart, Area
 } from "recharts";
+import dashboardService from "../../services/dashboardService";
 
 const StatCard = ({ title, value, icon, trend, color = "blue", loading = false }) => (
   <div className={`bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700 transform transition-all duration-200 hover:scale-105 hover:shadow-lg`}>
@@ -108,63 +109,22 @@ const ChartCard = ({ title, children, description = null }) => (
   </div>
 );
 
-const generateTaskData = () => {
-  const dates = [];
-  for (let i = 6; i >= 0; i--) {
-    const date = new Date();
-    date.setDate(date.getDate() - i);
-    dates.push(date.toLocaleDateString('en-US', { weekday: 'short' }));
-  }
-  
-  return dates.map(date => ({
-    day: date,
-    completed: Math.floor(Math.random() * 8),
-    pending: Math.floor(Math.random() * 5),
-    overdue: Math.floor(Math.random() * 3),
-  }));
-};
-
-const generatePomodoroData = () => {
-  const dates = [];
-  for (let i = 6; i >= 0; i--) {
-    const date = new Date();
-    date.setDate(date.getDate() - i);
-    dates.push(date.toLocaleDateString('en-US', { weekday: 'short' }));
-  }
-  
-  return dates.map(date => ({
-    day: date,
-    focusTime: Math.floor(Math.random() * 120) + 30,
-    sessionsCompleted: Math.floor(Math.random() * 8) + 1,
-  }));
-};
-
-const generateHabitData = () => {
-  const habitNames = ['Exercise', 'Reading', 'Meditation', 'Journaling', 'Coding'];
-  
-  return habitNames.map(habit => ({
-    name: habit,
-    completionRate: Math.floor(Math.random() * 100),
-    streak: Math.floor(Math.random() * 30),
-    totalCheckins: Math.floor(Math.random() * 100) + 20,
-  }));
-};
-
-const generateUsageData = () => {
-  return [
-    { subject: 'Tasks', usage: Math.floor(Math.random() * 100) },
-    { subject: 'Pomodoro', usage: Math.floor(Math.random() * 100) },
-    { subject: 'Habits', usage: Math.floor(Math.random() * 100) },
-    { subject: 'File Converter', usage: Math.floor(Math.random() * 100) },
-    { subject: 'Notepad', usage: Math.floor(Math.random() * 100) },
-    { subject: 'Code Editor', usage: Math.floor(Math.random() * 100) },
-  ];
-};
-
 export default function Dashboard() {
   const userData = JSON.parse(localStorage.getItem("userData")) || { username: "User" };
   
-  const stats = [
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [stats, setStats] = useState([]);
+  const [recentActivities, setRecentActivities] = useState([]);
+  const [taskData, setTaskData] = useState([]);
+  const [pomodoroData, setPomodoroData] = useState([]);
+  const [habitData, setHabitData] = useState([]);
+  const [usageData, setUsageData] = useState([]);
+  const [insights, setInsights] = useState([]);
+  const [showAnalytics, setShowAnalytics] = useState(false);
+  const [timeRange, setTimeRange] = useState('7');
+
+  const defaultStats = [
     {
       title: "Tasks Due Today",
       value: "5",
@@ -222,7 +182,7 @@ export default function Dashboard() {
     }
   ];
 
-  const recentActivities = [
+  const defaultActivities = [
     {
       title: "Task Completed",
       description: "Frontend UI Implementation",
@@ -246,26 +206,118 @@ export default function Dashboard() {
     }
   ];
 
-  const [loading, setLoading] = useState(true);
-  const [taskData, setTaskData] = useState([]);
-  const [pomodoroData, setPomodoroData] = useState([]);
-  const [habitData, setHabitData] = useState([]);
-  const [usageData, setUsageData] = useState([]);
-  const [showAnalytics, setShowAnalytics] = useState(false);
+  const fetchDashboardData = async () => {
+    setLoading(true);
+    try {
+      await dashboardService.trackFeatureUsage('Dashboard');
+      
+      if (!showAnalytics) {
+        const [statsData, activitiesData] = await Promise.all([
+          dashboardService.getDashboardStats(),
+          dashboardService.getRecentActivities(),
+        ]);
+        
+        setStats(statsData);
+        setRecentActivities(activitiesData);
+      } else {
+        const [taskAnalytics, pomodoroStats, habitStats, featureUsage, insightsData] = await Promise.all([
+          dashboardService.getTaskAnalytics(timeRange),
+          dashboardService.getPomodoroStats(timeRange),
+          dashboardService.getHabitStats(),
+          dashboardService.getUsageStats(),
+          dashboardService.getInsights(),
+        ]);
+        
+        setTaskData(taskAnalytics);
+        setPomodoroData(pomodoroStats);
+        setHabitData(habitStats);
+        setUsageData(featureUsage);
+        setInsights(insightsData);
+      }
+      
+      setError(null);
+    } catch (err) {
+      console.error("Error fetching dashboard data:", err);
+      setError("Failed to load dashboard data. Using cached data instead.");
+      
+      setStats(defaultStats);
+      setRecentActivities(defaultActivities);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const ensureValidIcon = (iconPath) => {
+    if (!iconPath || !iconPath.trim() || !(iconPath.trim().startsWith('M') || iconPath.trim().startsWith('m'))) {
+      return "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z";
+    }
+    return iconPath;
+  };
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setTaskData(generateTaskData());
-      setPomodoroData(generatePomodoroData());
-      setHabitData(generateHabitData());
-      setUsageData(generateUsageData());
-      setLoading(false);
-    }, 1000);
-    return () => clearTimeout(timer);
-  }, []);
+    fetchDashboardData();
+  }, [showAnalytics, timeRange]);
 
-  const handleQuickAction = (action) => {
-    console.log(`Quick action clicked: ${action}`);
+  useEffect(() => {
+    if (stats.length > 0) {
+      const validatedStats = stats.map(stat => ({
+        ...stat,
+        icon: ensureValidIcon(stat.icon)
+      }));
+      if (JSON.stringify(validatedStats) !== JSON.stringify(stats)) {
+        setStats(validatedStats);
+      }
+    }
+
+    if (recentActivities.length > 0) {
+      const validatedActivities = recentActivities.map(activity => ({
+        ...activity,
+        icon: ensureValidIcon(activity.icon)
+      }));
+      if (JSON.stringify(validatedActivities) !== JSON.stringify(recentActivities)) {
+        setRecentActivities(validatedActivities);
+      }
+    }
+
+    if (insights.length > 0) {
+      const validatedInsights = insights.map(insight => ({
+        ...insight,
+        icon: ensureValidIcon(insight.icon)
+      }));
+      if (JSON.stringify(validatedInsights) !== JSON.stringify(insights)) {
+        setInsights(validatedInsights);
+      }
+    }
+  }, [stats, recentActivities, insights]);
+
+  const handleTimeRangeChange = (e) => {
+    setTimeRange(e.target.value);
+  };
+
+  const handleQuickAction = async (action) => {
+    try {
+      switch(action) {
+        case "Create New Task":
+          window.location.href = '/tasks/create';
+          break;
+        case "Start New Project":
+          window.location.href = '/projects/create';
+          break;
+        case "Schedule Meeting":
+          window.location.href = '/calendar';
+          break;
+        case "Generate Report":
+          alert("Report generation will be implemented soon!");
+          break;
+        default:
+          console.log(`Action not implemented: ${action}`);
+      }
+      
+      await dashboardService.trackFeatureUsage(action);
+      
+    } catch (err) {
+      console.error(`Error performing action ${action}:`, err);
+    }
   };
 
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
@@ -297,6 +349,12 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {error && (
+        <div className="bg-red-100 dark:bg-red-900/20 p-4 rounded-lg mb-4">
+          <p className="text-red-700 dark:text-red-300">{error}</p>
+        </div>
+      )}
+
       {!showAnalytics ? (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 lg:gap-6">
@@ -323,117 +381,145 @@ export default function Dashboard() {
         <>
           <div className="flex justify-between items-center">
             <h2 className="text-xl font-bold text-gray-900 dark:text-white">Performance Analytics</h2>
-            <select className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md px-3 py-2 text-sm">
-              <option>Last 7 Days</option>
-              <option>Last 30 Days</option>
-              <option>Last 90 Days</option>
-              <option>This Year</option>
+            <select 
+              className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md px-3 py-2 text-sm"
+              value={timeRange}
+              onChange={handleTimeRangeChange}
+            >
+              <option value="7">Last 7 Days</option>
+              <option value="30">Last 30 Days</option>
+              <option value="90">Last 90 Days</option>
+              <option value="365">This Year</option>
             </select>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <ChartCard title="Task Completion Analytics" description="Completed vs pending tasks over the past week">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={taskData}
-                  margin={{ top: 10, right: 30, left: 0, bottom: 10 }}
-                  barGap={0}
-                  barCategoryGap="15%"
-                >
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                  <XAxis dataKey="day" />
-                  <YAxis />
-                  <Tooltip formatter={(value) => [`${value} tasks`, ""]} />
-                  <Legend />
-                  <Bar dataKey="completed" name="Completed" fill="#10B981" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="pending" name="Pending" fill="#FBBF24" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="overdue" name="Overdue" fill="#EF4444" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+              {loading ? (
+                <div className="h-full w-full flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500"></div>
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={taskData}
+                    margin={{ top: 10, right: 30, left: 0, bottom: 10 }}
+                    barGap={0}
+                    barCategoryGap="15%"
+                  >
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                    <XAxis dataKey="day" />
+                    <YAxis />
+                    <Tooltip formatter={(value) => [`${value} tasks`, ""]} />
+                    <Legend />
+                    <Bar dataKey="completed" name="Completed" fill="#10B981" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="pending" name="Pending" fill="#FBBF24" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="overdue" name="Overdue" fill="#EF4444" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
             </ChartCard>
 
             <ChartCard title="Focus Time Tracking" description="Your daily pomodoro focus sessions">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart
-                  data={pomodoroData}
-                  margin={{ top: 10, right: 30, left: 0, bottom: 10 }}
-                >
-                  <defs>
-                    <linearGradient id="colorFocus" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.8} />
-                      <stop offset="95%" stopColor="#3B82F6" stopOpacity={0.1} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                  <XAxis dataKey="day" />
-                  <YAxis label={{ value: 'Minutes', angle: -90, position: 'insideLeft' }} />
-                  <Tooltip formatter={(value) => [`${value} mins`, ""]} />
-                  <Legend />
-                  <Area 
-                    type="monotone" 
-                    dataKey="focusTime" 
-                    name="Focus Time" 
-                    stroke="#3B82F6" 
-                    fillOpacity={1} 
-                    fill="url(#colorFocus)" 
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="sessionsCompleted" 
-                    name="Sessions" 
-                    stroke="#8884d8" 
-                    strokeWidth={2}
-                    dot={{ r: 4 }}
-                    activeDot={{ r: 6 }}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
+              {loading ? (
+                <div className="h-full w-full flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500"></div>
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart
+                    data={pomodoroData}
+                    margin={{ top: 10, right: 30, left: 0, bottom: 10 }}
+                  >
+                    <defs>
+                      <linearGradient id="colorFocus" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.8} />
+                        <stop offset="95%" stopColor="#3B82F6" stopOpacity={0.1} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                    <XAxis dataKey="day" />
+                    <YAxis label={{ value: 'Minutes', angle: -90, position: 'insideLeft' }} />
+                    <Tooltip formatter={(value) => [`${value} mins`, ""]} />
+                    <Legend />
+                    <Area 
+                      type="monotone" 
+                      dataKey="focusTime" 
+                      name="Focus Time" 
+                      stroke="#3B82F6" 
+                      fillOpacity={1} 
+                      fill="url(#colorFocus)" 
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="sessionsCompleted" 
+                      name="Sessions" 
+                      stroke="#8884d8" 
+                      strokeWidth={2}
+                      dot={{ r: 4 }}
+                      activeDot={{ r: 6 }}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              )}
             </ChartCard>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <ChartCard title="Habit Completion Rate" description="Your active habits and completion rates">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  layout="vertical"
-                  data={habitData}
-                  margin={{ top: 10, right: 30, left: 40, bottom: 10 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
-                  <XAxis type="number" domain={[0, 100]} tickFormatter={(value) => `${value}%`} />
-                  <YAxis dataKey="name" type="category" width={80} />
-                  <Tooltip formatter={(value) => [`${value}%`, ""]} />
-                  <Bar 
-                    dataKey="completionRate" 
-                    name="Completion Rate" 
-                    fill="#8884d8"
-                    radius={[0, 4, 4, 0]}
-                    label={{ position: 'right', formatter: (value) => `${value}%` }}
+              {loading ? (
+                <div className="h-full w-full flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500"></div>
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    layout="vertical"
+                    data={habitData}
+                    margin={{ top: 10, right: 30, left: 40, bottom: 10 }}
                   >
-                    {habitData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
+                    <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
+                    <XAxis type="number" domain={[0, 100]} tickFormatter={(value) => `${value}%`} />
+                    <YAxis dataKey="name" type="category" width={80} />
+                    <Tooltip formatter={(value) => [`${value}%`, ""]} />
+                    <Bar 
+                      dataKey="completionRate" 
+                      name="Completion Rate" 
+                      fill="#8884d8"
+                      radius={[0, 4, 4, 0]}
+                      label={{ position: 'right', formatter: (value) => `${value}%` }}
+                    >
+                      {habitData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
             </ChartCard>
 
             <ChartCard title="Feature Usage Distribution" description="Which features you use the most">
-              <ResponsiveContainer width="100%" height="100%">
-                <RadarChart cx="50%" cy="50%" outerRadius="70%" data={usageData}>
-                  <PolarGrid />
-                  <PolarAngleAxis dataKey="subject" />
-                  <PolarRadiusAxis domain={[0, 100]} tickFormatter={(value) => `${value}%`} />
-                  <Radar 
-                    name="Usage" 
-                    dataKey="usage" 
-                    stroke="#8884d8" 
-                    fill="#8884d8" 
-                    fillOpacity={0.6} 
-                  />
-                  <Tooltip formatter={(value) => [`${value}%`, ""]} />
-                </RadarChart>
-              </ResponsiveContainer>
+              {loading ? (
+                <div className="h-full w-full flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500"></div>
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <RadarChart cx="50%" cy="50%" outerRadius="70%" data={usageData}>
+                    <PolarGrid />
+                    <PolarAngleAxis dataKey="subject" />
+                    <PolarRadiusAxis domain={[0, 100]} tickFormatter={(value) => `${value}%`} />
+                    <Radar 
+                      name="Usage" 
+                      dataKey="usage" 
+                      stroke="#8884d8" 
+                      fill="#8884d8" 
+                      fillOpacity={0.6} 
+                    />
+                    <Tooltip formatter={(value) => [`${value}%`, ""]} />
+                  </RadarChart>
+                </ResponsiveContainer>
+              )}
             </ChartCard>
           </div>
 
@@ -442,42 +528,36 @@ export default function Dashboard() {
               Personalized Insights
             </h3>
             <div className="space-y-4">
-              <div className="flex items-start">
-                <div className="flex-shrink-0 mt-1">
-                  <svg className="w-5 h-5 text-blue-500 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
+              {loading ? (
+                <div className="animate-pulse space-y-4">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="flex items-start">
+                      <div className="flex-shrink-0 mt-1">
+                        <div className="w-5 h-5 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
+                      </div>
+                      <div className="ml-3 w-full">
+                        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/4 mb-2"></div>
+                        <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                <div className="ml-3">
-                  <p className="text-sm text-gray-700 dark:text-gray-300">
-                    <span className="font-medium">Your most productive day</span> is Wednesday, with an average of 8 completed tasks.
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-start">
-                <div className="flex-shrink-0 mt-1">
-                  <svg className="w-5 h-5 text-blue-500 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <div className="ml-3">
-                  <p className="text-sm text-gray-700 dark:text-gray-300">
-                    <span className="font-medium">Your focus peaks</span> between 9:00 AM and 11:00 AM. Try scheduling your most important tasks during this time.
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-start">
-                <div className="flex-shrink-0 mt-1">
-                  <svg className="w-5 h-5 text-blue-500 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <div className="ml-3">
-                  <p className="text-sm text-gray-700 dark:text-gray-300">
-                    <span className="font-medium">Habit consistency:</span> You're most consistent with your "Exercise" habit at 78% completion rate.
-                  </p>
-                </div>
-              </div>
+              ) : (
+                insights.map((insight, index) => (
+                  <div key={index} className="flex items-start">
+                    <div className="flex-shrink-0 mt-1">
+                      <svg className="w-5 h-5 text-blue-500 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={ensureValidIcon(insight.icon)} />
+                      </svg>
+                    </div>
+                    <div className="ml-3">
+                      <p className="text-sm text-gray-700 dark:text-gray-300">
+                        <span className="font-medium">{insight.title}</span> {insight.description}
+                      </p>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </>

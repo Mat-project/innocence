@@ -22,6 +22,7 @@ urlpatterns = [
     path('api/pomodoro/', include('pomodoro.urls')),
     path('api/code-editor/', include('code_editor.urls')),
     path('api/notes/', include('notes.urls')),
+    path('api/dashboard/', include('dashboard.urls')),
 
 ]
 
