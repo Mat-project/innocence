@@ -1,0 +1,10 @@
+flask==2.0.1
+Werkzeug==2.0.1
+python-docx==0.8.11
+docx2txt==0.8
+PyMuPDF==1.19.6
+python-pptx==0.6.21
+fpdf==1.7.2
+Pillow==9.0.0
+pdfkit==1.0.0
+reportlab==3.6.8

@@ -49,12 +49,15 @@ export const AuthProvider = ({ children }) => {
       if (response.data.user && response.data.user.id) {
         localStorage.setItem('userId', response.data.user.id);
       }
-      navigate('/dashboard');
+      
+      // Don't navigate here - let the component handle navigation
       return { success: true };
       
     } catch (error) {
       console.error('Login failed:', error);
       setIsAuthenticated(false);
+      
+      // Return error information instead of redirecting
       if (error.message === 'Network Error') {
         return {
           success: false,

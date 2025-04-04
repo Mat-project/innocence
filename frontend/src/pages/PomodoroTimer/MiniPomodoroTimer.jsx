@@ -20,9 +20,8 @@ const MiniPomodoroTimer = () => {
     console.log('MiniPomodoroTimer rendered, isActive:', isActive);
   }, [isActive]);
 
-  // Remove the conditional return so it's always visible (for testing)
-  // If you want to make it conditional based on isActive, uncomment this line
-  // if (!isActive) return null;
+  // Restore the conditional return to only show when timer is active
+  if (!isActive) return null;
 
   return (
     <div className="fixed bottom-0 right-0 mb-4 mr-4 z-50">

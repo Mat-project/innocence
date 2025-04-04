@@ -37,7 +37,7 @@ const DashboardLayout = () => {
         <nav className="h-full overflow-y-auto">
           <div className="px-4 py-4">
             <Link to="/" className="flex items-center space-x-3">
-              <span className="text-xl font-semibold">Productivity Tool</span>
+              <span className="text-xl font-semibold">TaskVerse</span>
             </Link>
           </div>
           <div className="px-4">

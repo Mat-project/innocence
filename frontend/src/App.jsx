@@ -18,7 +18,6 @@ import PomodoroTimer from './pages/PomodoroTimer/PomodoroTimer';
 import CodeEditorPage from './pages/CodeEditor/CodeEditorPage'; 
 import ChatPage from './pages/Chat/ChatPage';
 import ResetPassword from './pages/ResetPassword';
-import Chat from './pages/Chat/fuck/Chat';
 import NotepadPage from './pages/Notepad/NotepadPage';  
 import { PomodoroProvider } from './context/PomodoroContext';
 
@@ -78,7 +77,7 @@ function App() {
                   <Route path="pomodoro-timer" element={<PomodoroTimer />} />
 
                   <Route path="/chat" element={<ChatPage />} />
-                  <Route path="/chatf" element={<Chat />} />
+
   {/*               <Toaster position="top-right" /> */}
 
                   <Route path="/code-editor/" element={<CodeEditorPage />} />
