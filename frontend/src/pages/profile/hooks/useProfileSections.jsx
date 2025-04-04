@@ -49,14 +49,26 @@ export const useSkills = () => {
     }
   }, []);
 
-  // Updated addSkill: use profileAPI.addSkill endpoint rather than updateProfile
+  // Updated addSkill: prepare the correct data format for the API endpoint
   const addSkill = async (skillData) => {
     setLoading(true);
     try {
-      // Log the data we're sending for debugging
-      console.log("Adding skill with data:", skillData);
+      // Make sure we have valid data
+      if (!skillData || !skillData.name) {
+        throw new Error('Skill name is required');
+      }
       
-      const response = await profileAPI.addSkill(skillData);
+      // Clean up data before sending - ensure we have the required fields in the correct format
+      const cleanedData = {
+        name: skillData.name?.trim(),
+        category: skillData.category || 'technical',
+        level: skillData.level || 'Beginner'
+      };
+      
+      // Log the data we're sending for debugging
+      console.log("Adding skill with data:", cleanedData);
+      
+      const response = await profileAPI.addSkill(cleanedData);
       console.log("Skill add response:", response);
       
       // Append the new skill to the current skills array
@@ -67,8 +79,40 @@ export const useSkills = () => {
       return true;
     } catch (err) {
       console.error("Error adding skill:", err);
-      // Ensure we show a proper error message
-      const errorMessage = err.response?.data?.detail || err.message || "Failed to add skill.";
+      
+      // Improved error handling
+      let errorMessage = 'Failed to add skill';
+      
+      // Extract error message from response if available
+      if (err.response) {
+        if (err.response.data?.error) {
+          errorMessage = err.response.data.error;
+        } else if (err.response.data?.detail) {
+          errorMessage = err.response.data.detail;
+        } else if (err.response.status === 400) {
+          errorMessage = 'Invalid skill data';
+          
+          // If validation errors are in a nested format
+          if (err.response.data) {
+            const validationErrors = [];
+            Object.entries(err.response.data).forEach(([field, errors]) => {
+              if (Array.isArray(errors)) {
+                validationErrors.push(`${field}: ${errors.join(', ')}`);
+              } else if (typeof errors === 'string') {
+                validationErrors.push(`${field}: ${errors}`);
+              }
+            });
+            
+            if (validationErrors.length > 0) {
+              errorMessage = validationErrors.join('; ');
+            }
+          }
+        }
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      // Show the error message
       toast.error(errorMessage);
       setError(errorMessage);
       return false;
@@ -77,11 +121,18 @@ export const useSkills = () => {
     }
   };
 
-  // Make sure updateSkill works with string toast messages
+  // Make sure updateSkill works with string toast messages and has proper data formatting
   const updateSkill = async (id, skillData) => {
     setLoading(true);
     try {
-      const response = await profileAPI.updateSkill(id, skillData);
+      // Clean up data before sending
+      const cleanedData = {
+        name: skillData.name,
+        category: skillData.category || 'technical',
+        level: skillData.level || 'Beginner'
+      };
+      
+      const response = await profileAPI.updateSkill(id, cleanedData);
       setSkills(prev => prev.map(skill => 
         skill.id === id ? response.data : skill
       ));

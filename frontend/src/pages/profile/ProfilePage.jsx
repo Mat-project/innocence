@@ -401,7 +401,7 @@ export default function ProfilePage() {
                   github={data.github}
                   onEdit={() => openModal("contact")}
                 />
-                <section>
+                {/* <section>
                   <h2 className="text-xl font-bold mb-4">Skills & Expertise</h2>
                   <div className="mb-4">
                     <button 
@@ -437,7 +437,7 @@ export default function ProfilePage() {
                       <p>No skills have been added yet.</p>
                     )}
                   </ul>
-                </section>
+                </section> */}
               </div>
 
               {/* Main content */}
@@ -458,17 +458,17 @@ export default function ProfilePage() {
                   onItemEdit={handleItemEdit}
                 />
 
-                <ProfilePortfolio
+{/*                <ProfilePortfolio
                   portfolio={portfolio || []}
                   onEdit={() => handleItemEdit("portfolio")}
                   onItemEdit={(item) => handleItemEdit("portfolio", item)}
-                /> 
-                <ProfileSkills />
+                />  */} 
+                {/* <ProfileSkills />*/}
               </div>
             </div>
           </div>
 
-          {modalOpen && (
+           {modalOpen && (
             <ProfileEditModal
               isOpen={modalOpen}
               type={modalType}
@@ -477,7 +477,7 @@ export default function ProfilePage() {
               onClose={() => setModalOpen(false)}
               onSave={handleModalSave}
             />
-          )}
+          )} 
           
           {/* Only show section modal for non-skills sections */}
           {sectionModalOpen && sectionType !== "skills" && (
@@ -510,7 +510,7 @@ export default function ProfilePage() {
                 />
               </DialogContent>
             </Dialog>
-          )}
+          )} 
           
           <SkillEditModal 
             isOpen={isSkillModalOpen}

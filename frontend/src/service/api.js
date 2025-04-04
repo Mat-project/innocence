@@ -95,12 +95,13 @@ export const taskAPI = {
 
 export const notificationAPI = {
   getNotifications: async () => {
-    console.log("Calling: /notifications/");
-    return await api.get('/notifications/');
+    console.log("Fetching notifications");
+    return await api.get('/api/notifications/');
   },
-  markAsRead: async (id) => await api.patch(`/notifications/${id}/read/`),
-  createNotification: async (data) => await api.post('/notifications/', data),
-  deleteNotification: async (id) => await api.delete(`/notifications/${id}/`),
+  markAsRead: async (id) => {
+    console.log(`Marking notification ${id} as read`);
+    return await api.patch(`/api/notifications/${id}/read/`);
+  }
 };
 
 export const fileConverterAPI = {
@@ -123,14 +124,74 @@ export const profileAPI = {
   },
   addSkill: (data) => {
     console.log("Calling: /api/skills/ POST with data:", data);
-    return api.post('/api/skills/', data);
+    
+    // Ensure required fields are present with correct format
+    const skillData = {
+      name: data.name?.trim() || '',
+      category: data.category || 'technical',
+      level: data.level || 'Beginner'
+    };
+    
+    // Validate required fields
+    if (!skillData.name) {
+      console.error("Validation error: Skill name is required");
+      return Promise.reject(new Error('Skill name is required'));
+    }
+    
+    // Check if category is valid
+    if (!['technical', 'soft'].includes(skillData.category)) {
+      console.error("Validation error: Invalid category");
+      return Promise.reject(new Error('Category must be "technical" or "soft"'));
+    }
+    
+    // Check if level is valid
+    if (!['Beginner', 'Intermediate', 'Expert'].includes(skillData.level)) {
+      console.error("Validation error: Invalid level");
+      return Promise.reject(new Error('Level must be "Beginner", "Intermediate", or "Expert"'));
+    }
+    
+    return api.post('/api/skills/', skillData);
   },
   updateSkill: (id, data) => {
     console.log(`Calling: /api/skills/${id}/ PUT`, data);
-    return api.put(`/api/skills/${id}/`, data);
+    
+    if (!id) {
+      console.error("Validation error: Skill ID is required for updates");
+      return Promise.reject(new Error('Skill ID is required for updates'));
+    }
+    
+    // Ensure required fields are present with correct format
+    const skillData = {
+      name: data.name?.trim() || '',
+      category: data.category || 'technical',
+      level: data.level || 'Beginner'
+    };
+    
+    // Validate required fields
+    if (!skillData.name) {
+      console.error("Validation error: Skill name is required");
+      return Promise.reject(new Error('Skill name is required'));
+    }
+    
+    // Check if category is valid
+    if (!['technical', 'soft'].includes(skillData.category)) {
+      console.error("Validation error: Invalid category");
+      return Promise.reject(new Error('Category must be "technical" or "soft"'));
+    }
+    
+    // Check if level is valid
+    if (!['Beginner', 'Intermediate', 'Expert'].includes(skillData.level)) {
+      console.error("Validation error: Invalid level");
+      return Promise.reject(new Error('Level must be "Beginner", "Intermediate", or "Expert"'));
+    }
+    
+    return api.put(`/api/skills/${id}/`, skillData);
   },
   deleteSkill: (id) => {
     console.log(`Calling: /api/skills/${id}/ DELETE`);
+    if (!id) {
+      return Promise.reject(new Error('Skill ID is required for deletion'));
+    }
     return api.delete(`/api/skills/${id}/`);
   },
   

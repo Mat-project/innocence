@@ -38,10 +38,11 @@ export default function ProfileExperience({ experience = [], education = [], onE
           {!isPublicView && (
             <Button 
               variant="ghost" 
+              className="frontend/src/pages/profile/components/profileExperience.jsx"
               size="icon" 
               onClick={() => onEdit && typeof onEdit === 'function' && onEdit('experience')}
             >
-              <Edit className="h-4 w-4" />
+              <Edit className="h-4 w-4 bg-white" />
             </Button>
           )}
         </div>

@@ -7,22 +7,22 @@ from .views import (
     LogoutView,
     ProfileView,
     ForgotPasswordView,
-    ResetPasswordView,  # Add this new import
+    ResetPasswordView,
     ProfileDetailUpdateView,
     APIDebugView,
-    SkillViewSet,
     ExperienceViewSet,
     EducationViewSet,
     PortfolioViewSet,
     ProfileViewSet,
-    CheckUsernameView  # Make sure this is imported
+    CheckUsernameView
 )
+from .skill_views import SkillViewSet
 from .test_view import TestView, profile_test
 from .views_portfolio_page import PortfolioPageView
 
 router = DefaultRouter()
 router.register(r'profile', ProfileViewSet)
-router.register(r'skills', SkillViewSet, basename='skills')
+router.register(r'skills', SkillViewSet, basename='skill')
 router.register(r'experience', ExperienceViewSet, basename='experience')
 router.register(r'education', EducationViewSet, basename='education')
 router.register(r'portfolio', PortfolioViewSet, basename='portfolio')

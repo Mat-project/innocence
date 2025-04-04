@@ -4,7 +4,8 @@ import { Button } from "@components/ui/button";
 import { Input } from "@components/ui/input";
 import { Label } from "@components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@components/ui/select";
-import { useSkills } from "../../../pages/profile/hooks/useProfileSections"; // dedicated skills hook
+import { useSkills } from "../../../pages/profile/hooks/useProfileSections"; 
+import { toast } from "sonner";
 
 export default function SkillEditModal({ isOpen, onOpenChange, initialData = {}, onDelete }) {
   const [formData, setFormData] = useState({
@@ -14,6 +15,10 @@ export default function SkillEditModal({ isOpen, onOpenChange, initialData = {},
     ...initialData,
   });
   const [errors, setErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Use the useSkills hook directly in the component
+  const { addSkill, updateSkill, deleteSkill, fetchSkills } = useSkills();
 
   useEffect(() => {
     if (isOpen) {
@@ -24,10 +29,9 @@ export default function SkillEditModal({ isOpen, onOpenChange, initialData = {},
         ...initialData,
       });
       setErrors({});
+      setIsSubmitting(false);
     }
   }, [isOpen, initialData]);
-
-  const { addSkill, updateSkill } = useSkills(); // use dedicated functions
 
   const handleChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -52,15 +56,66 @@ export default function SkillEditModal({ isOpen, onOpenChange, initialData = {},
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
+    
+    setIsSubmitting(true);
+    
+    try {
+      if (initialData.id) {
+        // Update existing skill
+        console.log("Updating skill with ID:", initialData.id);
+        const success = await updateSkill(initialData.id, {
+          name: formData.name,
+          category: formData.category,
+          level: formData.level
+        });
+        
+        if (success) {
+          onOpenChange(false);
+          // Refresh the skills list
+          await fetchSkills();
+          if (typeof onSave === 'function') onSave();
+        }
+      } else {
+        // Add new skill
+        console.log("Adding new skill", formData);
+        const success = await addSkill({
+          name: formData.name,
+          category: formData.category,
+          level: formData.level
+        });
+        
+        if (success) {
+          onOpenChange(false);
+          // Refresh the skills list
+          await fetchSkills();
+          if (typeof onSave === 'function') onSave();
+        }
+      }
+    } catch (error) {
+      console.error("Error saving skill:", error);
+      toast.error("Failed to save skill: " + (error.message || "Unknown error"));
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
-    if (initialData.id) {
-      // Editing existing skill using correct endpoint:
-      const success = await updateSkill(initialData.id, formData);
-      if (success) onOpenChange(false);
-    } else {
-      // Adding a new skill via dedicated addSkill endpoint:
-      const success = await addSkill(formData);
-      if (success) onOpenChange(false);
+  const handleDelete = async () => {
+    if (!initialData.id) return;
+    
+    setIsSubmitting(true);
+    try {
+      const success = await deleteSkill(initialData.id);
+      if (success) {
+        onOpenChange(false);
+        // Refresh the skills list
+        await fetchSkills();
+        if (typeof onDelete === 'function') onDelete(initialData.id);
+      }
+    } catch (error) {
+      console.error("Error deleting skill:", error);
+      toast.error("Failed to delete skill: " + (error.message || "Unknown error"));
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -79,6 +134,7 @@ export default function SkillEditModal({ isOpen, onOpenChange, initialData = {},
               onChange={(e) => handleChange("name", e.target.value)}
               placeholder="Enter skill name"
               className={errors.name ? "border-red-500" : ""}
+              disabled={isSubmitting}
             />
             {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
           </div>
@@ -87,6 +143,7 @@ export default function SkillEditModal({ isOpen, onOpenChange, initialData = {},
             <Select
               value={formData.category || "technical"}
               onValueChange={(value) => handleChange("category", value)}
+              disabled={isSubmitting}
             >
               <SelectTrigger id="category">
                 <SelectValue placeholder="Select category" />
@@ -102,6 +159,7 @@ export default function SkillEditModal({ isOpen, onOpenChange, initialData = {},
             <Select
               value={formData.level || "Beginner"}
               onValueChange={(value) => handleChange("level", value)}
+              disabled={isSubmitting}
             >
               <SelectTrigger id="level">
                 <SelectValue placeholder="Select level" />
@@ -114,17 +172,30 @@ export default function SkillEditModal({ isOpen, onOpenChange, initialData = {},
             </Select>
           </div>
           <div className="flex justify-between pt-4">
-            {isEditing && onDelete && (
-              <Button type="button" variant="destructive" onClick={() => onDelete(initialData.id)}>
-                Delete
+            {isEditing && (
+              <Button 
+                type="button" 
+                variant="destructive" 
+                onClick={handleDelete}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? "Deleting..." : "Delete"}
               </Button>
             )}
             <div className="space-x-2">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => onOpenChange(false)}
+                disabled={isSubmitting}
+              >
                 Cancel
               </Button>
-              <Button type="submit">
-                {isEditing ? "Update" : "Save"}
+              <Button 
+                type="submit"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? (isEditing ? "Updating..." : "Saving...") : (isEditing ? "Update" : "Save")}
               </Button>
             </div>
           </div>
