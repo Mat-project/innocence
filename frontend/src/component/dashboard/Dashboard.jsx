@@ -158,27 +158,27 @@ export default function Dashboard() {
   const quickActions = [
     {
       title: "Create New Task",
-      description: "Add a new task to your task list",
-      icon: "M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2",
+      description: "Add a new task to your list",
+      icon: "M12 4v16m8-8H4",
       color: "blue"
     },
     {
-      title: "Focus Timer",
-      description: "Start a pomodoro focus session",
-      icon: "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z",
-      color: "red"
+      title: "Start New Project",
+      description: "Initialize a new project workspace",
+      icon: "M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z",
+      color: "purple"
     },
     {
-      title: "File Converter",
-      description: "Convert files between different formats",
-      icon: "M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z",
+      title: "Schedule Meeting",
+      description: "Set up a meeting with your team",
+      icon: "M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z",
       color: "green"
     },
     {
-      title: "Note Pad",
-      description: "Take quick notes and organize your thoughts",
-      icon: "M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z",
-      color: "yellow"
+      title: "Generate Report",
+      description: "Create a new activity report",
+      icon: "M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z",
+      color: "orange"
     }
   ];
 
@@ -300,14 +300,14 @@ export default function Dashboard() {
         case "Create New Task":
           window.location.href = '/tasks/';
           break;
-        case "Focus Timer":
-          window.location.href = '/pomodoro-timer';
+        case "Start New Project":
+          window.location.href = '/projects/create';
           break;
-        case "File Converter":
-          window.location.href = '/file-convertor';
+        case "Schedule Meeting":
+          window.location.href = '/calendar';
           break;
-        case "Note Pad":
-          window.location.href = '/notepad';
+        case "Generate Report":
+          alert("Report generation will be implemented soon!");
           break;
         default:
           console.log(`Action not implemented: ${action}`);

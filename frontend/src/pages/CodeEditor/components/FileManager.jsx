@@ -327,7 +327,7 @@ const FileManager = ({ onFileSelect, selectedFileId }) => {
     return (
       <div 
         className="context-menu absolute bg-white dark:bg-gray-800 shadow-lg rounded-md border border-gray-200 dark:border-gray-700 py-1 z-50"
-        style={`{ top: ${y}px, left: ${x}px }`}
+        style={{ top: `${y}px`, left: `${x}px` }}
       >
         {isFolder && (
           <>
