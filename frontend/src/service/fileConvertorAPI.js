@@ -10,7 +10,10 @@ const api = axios.create({
 export const fileConvertorAPI = {
   // Now point to new /api/convert endpoint
   convertFile: (formData, onUploadProgress) => {
-    return api.post('/api/convert', formData, { onUploadProgress });
+    return api.post('/api/convert', formData, { 
+      onUploadProgress,
+      responseType: 'json' // Ensure we're expecting JSON
+    });
   },
 };
 

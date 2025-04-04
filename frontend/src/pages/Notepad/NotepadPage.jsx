@@ -354,7 +354,7 @@ const NotepadPage = () => {
                       <p className="mb-4">No notes yet</p>
                       <button
                         onClick={handleCreateNote}
-                        className="px-4 py-2 bg-indigo-500 text-white rounded-md hover:bg-indigo-600 transition-colors"
+                        className="px-4 py-2 bg-indigo-500 text-black dark:text-white rounded-md hover:bg-indigo-600 transition-colors"
                       >
                         Create your first note
                       </button>

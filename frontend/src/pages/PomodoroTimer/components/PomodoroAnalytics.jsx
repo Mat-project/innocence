@@ -1,22 +1,25 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../../../context/AuthContext';
+import { getPomodoroSessions, getPomodoroStatistics } from '../../../services/api/pomodoroApi';
 import { 
   Chart as ChartJS, 
   CategoryScale, 
   LinearScale, 
   PointElement, 
-  LineElement, 
+  LineElement,
   BarElement,
-  Title, 
-  Tooltip, 
-  Legend,
-  ArcElement
+  ArcElement,
+  Filler, // Add Filler plugin import
+  Title,
+  Tooltip,
+  Legend
 } from 'chart.js';
 import { Line, Bar, Pie } from 'react-chartjs-2';
-import { ClockIcon, CalendarIcon, TrendingUpIcon, ChartBarIcon } from 'lucide-react';
-import { getPomodoroSessions, getPomodoroStatistics } from '../../../services/api/pomodoroApi';
-import { useAuth } from '../../../context/AuthContext';
+import { format, subDays, parseISO, isAfter } from 'date-fns';
+// Add missing icon imports
+import { Clock as ClockIcon, Calendar as CalendarIcon, TrendingUp as TrendingUpIcon, BarChart as ChartBarIcon } from 'lucide-react';
 
-// Register Chart.js components
+// Register Chart.js components, including the Filler plugin
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -24,6 +27,7 @@ ChartJS.register(
   LineElement,
   BarElement,
   ArcElement,
+  Filler, // Register the Filler plugin
   Title,
   Tooltip,
   Legend

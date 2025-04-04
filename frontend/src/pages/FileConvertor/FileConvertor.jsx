@@ -32,7 +32,7 @@ const conversionOptions = [
     icon: <File className="w-5 h-5 text-red-500" />
   },
   {
-    id: "image_to_pdf",
+    id: "img_to_pdf", // CHANGE THIS FROM "image_to_pdf" to "img_to_pdf"
     title: "Image to PDF",
     sourceType: "image",
     sourceExt: ["png", "jpg", "jpeg"],
@@ -71,6 +71,7 @@ export default function FileConverter() {
   const [status, setStatus] = useState("idle"); // idle, uploading, success, error
   const [error, setError] = useState("");
   const [progress, setProgress] = useState(0);
+  const [downloadUrl, setDownloadUrl] = useState(null); // Add this state at the top
   
   const fileInputRef = useRef(null);
   
@@ -99,46 +100,48 @@ export default function FileConverter() {
   };
   
   const handleConvert = async () => {
-    // Make sure we have a file and a selected conversion option
-    if (!file || !selectedConversion) {
-      setError("Please select a file and conversion option");
-      return;
-    }
-    
-    setStatus("uploading");
-    setProgress(0);
-    setError("");
-    
-    // Create form data
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("file_type", selectedConversion.sourceType);
-    formData.append("conversion_type", selectedConversion.id);
-    
+    if (!file || !selectedConversion) return;
+
     try {
-      const response = await fileConvertorAPI.convertFile(formData, (progressEvent) => {
-        const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-        setProgress(percentCompleted);
+      setStatus("uploading");
+      setProgress(0);
+      setError("");
+      
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("file_type", selectedConversion.sourceType);
+      formData.append("conversion_type", selectedConversion.id);
+      
+      const response = await fileConvertorAPI.convertFile(formData, (event) => {
+        const progress = Math.round((event.loaded * 100) / event.total);
+        setProgress(progress);
       });
       
-      // Now expect a JSON response with file_url
-      const fileUrl = response.data.file_url;
-      if (fileUrl) {
-        // Open the file URL in a new tab (or trigger download programmatically)
-        window.open(fileUrl, '_blank');
+      console.log("Server response:", response.data); // For debugging
+      
+      if (response.data && response.data.file_url) {
         setStatus("success");
+        setDownloadUrl(response.data.file_url); // Store the URL
+        
+        // Try automatic download
+        try {
+          const link = document.createElement('a');
+          link.href = response.data.file_url;
+          link.download = response.data.filename || 'converted-file.pdf';
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        } catch (downloadErr) {
+          console.error("Auto-download failed:", downloadErr);
+          // Don't set error state - we'll show the manual button instead
+        }
       } else {
-        throw new Error("No file URL returned from conversion.");
+        throw new Error("Invalid response format");
       }
-    } catch (error) {
-      console.error("Conversion error:", error);
-      setError("Conversion failed. Please try again later.");
+    } catch (err) {
       setStatus("error");
-    } finally {
-      setProgress(100);
-      setTimeout(() => {
-        if (status !== "error") setStatus("idle");
-      }, 3000);
+      console.log("Conversion error: ", err);
+      setError(err.response?.data?.error || "Failed to convert file. Please try again.");
     }
   };
   
@@ -298,6 +301,15 @@ export default function FileConverter() {
                   )}
                 </button>
               </div>
+              
+              {status === "success" && downloadUrl && (
+                <button 
+                  onClick={() => window.open(downloadUrl, '_blank')}
+                  className="mt-4 px-4 py-2 rounded-md text-white text-sm flex items-center transition-all bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600"
+                >
+                  Download Converted File
+                </button>
+              )}
             </div>
           )}
         </div>

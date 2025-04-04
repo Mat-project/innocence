@@ -15,17 +15,12 @@ import FileConverterPage from './pages/FileConvertor/FileConverterPage';
 import About from './component/LandingComponent/about';
 import HabitTracker from './pages/HabitTracker/HabitTracker';
 import PomodoroTimer from './pages/PomodoroTimer/PomodoroTimer';
-
-
 import CodeEditorPage from './pages/CodeEditor/CodeEditorPage'; 
-
 import ChatPage from './pages/Chat/ChatPage';
 import ResetPassword from './pages/ResetPassword';
 import Chat from './pages/Chat/fuck/Chat';
-  
 import NotepadPage from './pages/Notepad/NotepadPage';  
-
-
+import { PomodoroProvider } from './context/PomodoroContext';
 
 // Protected Route component
 
@@ -52,48 +47,50 @@ function App() {
   return (
     <Router>
       <ThemeProvider>
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <Routes>
-            {/* Public routes */}
-            <Route path="/" element={<LandingPage />} />
-            <Route path="/login" element={
-              <AuthLayout>
-                <LoginForm />
-              </AuthLayout>
-            } />
-            <Route path="/register" element={
-              <AuthLayout>
-                <RegisterForm />
-              </AuthLayout>
-            } />
-            <Route path="/reset-password/:uid/:token" element={<ResetPassword />} />
-            
-            {/* Protected Routes */}
-            <Route path="/" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
-              <Route path="dashboard" element={<Dashboard />} />
-              {/*<Route path="tasks" element={<ResponsiveTaskManager />} />*/}
-              <Route path="tasks" element={<TaskPage />} />
-              <Route path="notifications" element={<NotificationsPage />} />
-              <Route path="profile" element={<ProfilePage />} />
-              <Route path="file-convertor" element={<FileConverterPage />} />
-{/*               <Route path="about" element={<About />} /> */}
-              <Route path="habit-tracker" element={<HabitTracker />} />
-              <Route path="pomodoro-timer" element={<PomodoroTimer />} />
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>
+            <PomodoroProvider>
+              <Routes>
+                {/* Public routes */}
+                <Route path="/" element={<LandingPage />} />
+                <Route path="/login" element={
+                  <AuthLayout>
+                    <LoginForm />
+                  </AuthLayout>
+                } />
+                <Route path="/register" element={
+                  <AuthLayout>
+                    <RegisterForm />
+                  </AuthLayout>
+                } />
+                <Route path="/reset-password/:uid/:token" element={<ResetPassword />} />
+                
+                {/* Protected Routes */}
+                <Route path="/" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
+                  <Route path="dashboard" element={<Dashboard />} />
+                  {/*<Route path="tasks" element={<ResponsiveTaskManager />} />*/}
+                  <Route path="tasks" element={<TaskPage />} />
+                  <Route path="notifications" element={<NotificationsPage />} />
+                  <Route path="profile" element={<ProfilePage />} />
+                  <Route path="file-convertor" element={<FileConverterPage />} />
+  {/*               <Route path="about" element={<About />} /> */}
+                  <Route path="habit-tracker" element={<HabitTracker />} />
+                  <Route path="pomodoro-timer" element={<PomodoroTimer />} />
 
-              <Route path="/chat" element={<ChatPage />} />
-              <Route path="/chatf" element={<Chat />} />
-{/*               <Toaster position="top-right" /> */}
+                  <Route path="/chat" element={<ChatPage />} />
+                  <Route path="/chatf" element={<Chat />} />
+  {/*               <Toaster position="top-right" /> */}
 
-              <Route path="/code-editor/" element={<CodeEditorPage />} />
-              <Route path="/notepad/" element={<NotepadPage />} />
+                  <Route path="/code-editor/" element={<CodeEditorPage />} />
+                  <Route path="/notepad/" element={<NotepadPage />} />
 
-            </Route>
+                </Route>
 
-            {/* Catch-all route for 404 */}
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </AuthProvider>
+                {/* Catch-all route for 404 */}
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+            </PomodoroProvider>
+          </AuthProvider>
         </QueryClientProvider>
       </ThemeProvider>
     </Router>
