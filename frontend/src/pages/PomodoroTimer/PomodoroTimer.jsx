@@ -104,7 +104,7 @@ const PomodoroTimer = () => {
           
           <button
             onClick={resetTimer}
-            className="flex items-center justify-center w-12 h-12 rounded-full bg-gray-300 text-black dark:text-white shadow-md hover:bg-gray-400 transition-colors dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+            className="flex items-center justify-center w-12 h-12 rounded-full bg-gray-300 text-black  shadow-md hover:bg-gray-400 transition-colors dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
             title="Reset"
           >
             <RotateCcw size={24} />

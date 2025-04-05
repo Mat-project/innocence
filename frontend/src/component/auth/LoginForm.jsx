@@ -84,7 +84,7 @@ export default function LoginForm() {
       <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-900 dark:to-black py-12 px-4 sm:px-6 lg:px-8 fixed inset-0 overflow-y-auto">
         <div className="max-w-md w-full space-y-8 bg-white dark:bg-gray-800 shadow-2xl rounded-2xl p-8 mx-auto my-auto">
           {/* Add Back to Home link */}
-          <div className="absolute top-6 left-6">
+{/*           <div className="absolute top-6 left-6">
             <Link 
               to="/" 
               className="flex items-center text-gray-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400"
@@ -94,7 +94,7 @@ export default function LoginForm() {
               </svg>
               Back to Home
             </Link>
-          </div>
+          </div> */}
           
           <div>
             <h2 className="mt-2 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
