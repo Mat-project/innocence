@@ -20,6 +20,7 @@ urlpatterns = [
     path('api/code-editor/', include('code_editor.urls')),
     path('api/notes/', include('notes.urls')),
     path('api/dashboard/', include('dashboard.urls')),
+    path('api/reports/', include('reports.urls')),
 
 ]
 

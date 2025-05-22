@@ -20,6 +20,7 @@ import ChatPage from './pages/Chat/ChatPage';
 import ResetPassword from './pages/ResetPassword';
 import NotepadPage from './pages/Notepad/NotepadPage';  
 import { PomodoroProvider } from './context/PomodoroContext';
+import ReportGeneratorPage from './pages/reports/ReportGeneratorPage';
 
 // Protected Route component
 
@@ -82,6 +83,7 @@ function App() {
 
                   <Route path="/code-editor/" element={<CodeEditorPage />} />
                   <Route path="/notepad/" element={<NotepadPage />} />
+                  <Route path="/reports" element={<ReportGeneratorPage />} />
 
                 </Route>
 

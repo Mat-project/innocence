@@ -230,7 +230,8 @@ export default function Dashboard() {
         
         setTaskData(taskAnalytics);
         setPomodoroData(pomodoroStats);
-        setHabitData(habitStats);
+        // Ensure habitData is always an array
+        setHabitData(Array.isArray(habitStats) ? habitStats : []);
         setUsageData(featureUsage);
         setInsights(insightsData);
       }
@@ -242,6 +243,8 @@ export default function Dashboard() {
       
       setStats(defaultStats);
       setRecentActivities(defaultActivities);
+      // Ensure habitData is initialized as an empty array in case of error
+      setHabitData([]);
     } finally {
       setLoading(false);
     }
@@ -489,7 +492,8 @@ export default function Dashboard() {
                       radius={[0, 4, 4, 0]}
                       label={{ position: 'right', formatter: (value) => `${value}%` }}
                     >
-                      {habitData.map((entry, index) => (
+                      {/* Guard against non-array habitData by checking Array.isArray first */}
+                      {Array.isArray(habitData) && habitData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Bar>
